@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/facturas")
+@RequestMapping("/api/facturas")
 @RequiredArgsConstructor
 public class FacturaRestController {
 
