@@ -24,10 +24,10 @@ import lombok.*;
 @Builder
 @EqualsAndHashCode(
         callSuper = true,
-        exclude = {"detalles", "cliente", "condicionIva", "puntoVenta"}
+        exclude = {"detalles"}
 )
 @ToString(
-        exclude = {"detalles", "cliente", "condicionIva", "puntoVenta"}
+        exclude = {"detalles"}
 )
 @Entity
 @Table(name = "factura_venta")

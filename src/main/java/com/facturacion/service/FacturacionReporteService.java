@@ -1,4 +1,4 @@
-package com.facturacion.reportes;
+package com.facturacion.service;
 import com.facturacion.DTO.FacturaReporteDTO;
 import com.lowagie.text.Document;
 import com.lowagie.text.Paragraph;
@@ -16,79 +16,70 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.io.FileOutputStream;
 import java.util.List;
+
 //Clase encargada de hacer los reportes en pdf y excel
 @Service
-public class FacturacionReporte {
+public class FacturacionReporteService {
 
     @PersistenceContext
     private EntityManager em;
 
-    try
+    public void generarReportes(){
+        try
+        {
+            // 1. CONSULTA JPQL
 
-    {
+            String jpql =
+                    "SELECT new com.facturacion.DTO.FacturaReporteDTO(" +
+                            "f.numero, " +
+                            "f.fechaEmision, " +
+                            "COALESCE(c.denominacion, 'Consumidor Final'), " +
+                            "ci.denominacion, " +
+                            "pv.descripcion, " +
+                            "f.importeTotal, " +
+                            "COUNT(d)) " +
+                            "FROM FacturaVenta f " +
+                            "LEFT JOIN f.cliente c " +
+                            "JOIN f.condicionIva ci " +
+                            "JOIN f.puntoVenta pv " +
+                            "JOIN f.detalles d " +
+                            "GROUP BY f.id, f.numero, f.fechaEmision, " +
+                            "c.denominacion, ci.denominacion, " +
+                            "pv.descripcion, f.importeTotal";
 
-
-        // 1. CONSULTA JPQL
-
-
-        String jpql =
-                "SELECT new com.facturacion.DTO.FacturaReporteDTO(" +
-                        "f.numero, " +
-                        "f.fechaEmision, " +
-                        "COALESCE(c.denominacion, 'Consumidor Final'), " +
-                        "ci.denominacion, " +
-                        "pv.descripcion, " +
-                        "f.importeTotal, " +
-                        "COUNT(d)) " +
-                        "FROM FacturaVenta f " +
-                        "LEFT JOIN f.cliente c " +
-                        "JOIN f.condicionIva ci " +
-                        "JOIN f.puntoVenta pv " +
-                        "JOIN f.detalles d " +
-                        "GROUP BY f.id, f.numero, f.fechaEmision, " +
-                        "c.denominacion, ci.denominacion, " +
-                        "pv.descripcion, f.importeTotal";
-
-        List<FacturaReporteDTO> reporte =
-                em.createQuery(jpql, FacturaReporteDTO.class)
-                        .getResultList();
+            List<FacturaReporteDTO> reporte =
+                    em.createQuery(jpql, FacturaReporteDTO.class)
+                            .getResultList();
 
 
-        // 2.MOSTRAR RESULTADOS EN CONSOLA
+            // 2.MOSTRAR RESULTADOS EN CONSOLA
 
-        for (FacturaReporteDTO factura : reporte) {
+            for (FacturaReporteDTO factura : reporte) {
 
-            System.out.println(
-                    "Factura: " + factura.getNumeroFactura() +
-                            " | Fecha: " + factura.getFechaEmision() +
-                            " | Cliente: " + factura.getClienteDenominacion() +
-                            " | Condición IVA: " + factura.getCondicionIva() +
-                            " | Punto de venta: " + factura.getPuntoVentaDescripcion() +
-                            " | Total: $" + factura.getImporteTotal() +
-                            " | Items: " + factura.getCantidadItems()
-            );
+                System.out.println(
+                        "Factura: " + factura.getNumeroFactura() +
+                                " | Fecha: " + factura.getFechaEmision() +
+                                " | Cliente: " + factura.getClienteDenominacion() +
+                                " | Condición IVA: " + factura.getCondicionIva() +
+                                " | Punto de venta: " + factura.getPuntoVentaDescripcion() +
+                                " | Total: $" + factura.getImporteTotal() +
+                                " | Items: " + factura.getCantidadItems()
+                );
+            }
+
+            // 3. GENERAR PDF
+            generarPDF(reporte);
+
+            // 4. GENERAR EXCEL
+            generarExcel(reporte);
+
+        } catch(Exception e) {
+            e.printStackTrace();
         }
 
-
-        // 3. GENERAR PDF
-
-
-        generarPDF(reporte);
-
-
-        // 4. GENERAR EXCEL
-
-
-        generarExcel(reporte);
-
-    } catch(Exception e) {
-        e.printStackTrace();
     }
 
-
-
     // MÉTODO PARA GENERAR PDF
-
 
     private static void generarPDF(List<FacturaReporteDTO> reporte) {
 
@@ -173,7 +164,6 @@ public class FacturacionReporte {
     }
 
 
-
     // MÉTODO PARA GENERAR EXCEL
 
 
@@ -212,10 +202,7 @@ public class FacturacionReporte {
             encabezado.createCell(6)
                     .setCellValue("Cantidad Items");
 
-
-
             // DATOS
-
 
             int fila = 1;
 
@@ -263,19 +250,13 @@ public class FacturacionReporte {
                 fila++;
             }
 
-
-
             // AJUSTAR ANCHO DE COLUMNAS
-
 
             for (int i = 0; i < 7; i++) {
                 hoja.autoSizeColumn(i);
             }
 
-
-
             // GUARDAR ARCHIVO
-
 
             FileOutputStream archivo =
                     new FileOutputStream(nombreArchivo);
