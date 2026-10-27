@@ -10,84 +10,79 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.stereotype.Service;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.io.FileOutputStream;
 import java.util.List;
-
 //Clase encargada de hacer los reportes en pdf y excel
+@Service
 public class FacturacionReporte {
 
-    public static void main(String[] args) {
+    @PersistenceContext
+    private EntityManager em;
 
-        EntityManagerFactory emf =
-                Persistence.createEntityManagerFactory("FacturacionPU");
+    try
 
-        EntityManager em = emf.createEntityManager();
-
-        try {
+    {
 
 
-            // 1. CONSULTA JPQL
+        // 1. CONSULTA JPQL
 
 
-            String jpql =
-                    "SELECT new com.facturacion.dto.FacturaReporteDTO(" +
-                            "f.numero, " +
-                            "f.fechaEmision, " +
-                            "COALESCE(c.denominacion, 'Consumidor Final'), " +
-                            "ci.denominacion, " +
-                            "pv.descripcion, " +
-                            "f.importeTotal, " +
-                            "COUNT(d)) " +
-                            "FROM FacturaVenta f " +
-                            "LEFT JOIN f.cliente c " +
-                            "JOIN f.condicionIva ci " +
-                            "JOIN f.puntoVenta pv " +
-                            "JOIN f.detalles d " +
-                            "GROUP BY f.id, f.numero, f.fechaEmision, " +
-                            "c.denominacion, ci.denominacion, " +
-                            "pv.descripcion, f.importeTotal";
+        String jpql =
+                "SELECT new com.facturacion.DTO.FacturaReporteDTO(" +
+                        "f.numero, " +
+                        "f.fechaEmision, " +
+                        "COALESCE(c.denominacion, 'Consumidor Final'), " +
+                        "ci.denominacion, " +
+                        "pv.descripcion, " +
+                        "f.importeTotal, " +
+                        "COUNT(d)) " +
+                        "FROM FacturaVenta f " +
+                        "LEFT JOIN f.cliente c " +
+                        "JOIN f.condicionIva ci " +
+                        "JOIN f.puntoVenta pv " +
+                        "JOIN f.detalles d " +
+                        "GROUP BY f.id, f.numero, f.fechaEmision, " +
+                        "c.denominacion, ci.denominacion, " +
+                        "pv.descripcion, f.importeTotal";
 
-            List<FacturaReporteDTO> reporte =
-                    em.createQuery(jpql, FacturaReporteDTO.class)
-                            .getResultList();
-
-
-            // 2.MOSTRAR RESULTADOS EN CONSOLA
-
-            for (FacturaReporteDTO factura : reporte) {
-
-                System.out.println(
-                        "Factura: " + factura.getNumeroFactura() +
-                                " | Fecha: " + factura.getFechaEmision() +
-                                " | Cliente: " + factura.getClienteDenominacion() +
-                                " | Condición IVA: " + factura.getCondicionIva() +
-                                " | Punto de venta: " + factura.getPuntoVentaDescripcion() +
-                                " | Total: $" + factura.getImporteTotal() +
-                                " | Items: " + factura.getCantidadItems()
-                );
-            }
+        List<FacturaReporteDTO> reporte =
+                em.createQuery(jpql, FacturaReporteDTO.class)
+                        .getResultList();
 
 
-            // 3. GENERAR PDF
+        // 2.MOSTRAR RESULTADOS EN CONSOLA
 
+        for (FacturaReporteDTO factura : reporte) {
 
-            generarPDF(reporte);
-
-
-            // 4. GENERAR EXCEL
-
-
-            generarExcel(reporte);
-
-        } finally {
-
-            em.close();
-            emf.close();
+            System.out.println(
+                    "Factura: " + factura.getNumeroFactura() +
+                            " | Fecha: " + factura.getFechaEmision() +
+                            " | Cliente: " + factura.getClienteDenominacion() +
+                            " | Condición IVA: " + factura.getCondicionIva() +
+                            " | Punto de venta: " + factura.getPuntoVentaDescripcion() +
+                            " | Total: $" + factura.getImporteTotal() +
+                            " | Items: " + factura.getCantidadItems()
+            );
         }
+
+
+        // 3. GENERAR PDF
+
+
+        generarPDF(reporte);
+
+
+        // 4. GENERAR EXCEL
+
+
+        generarExcel(reporte);
+
+    } catch(Exception e) {
+        e.printStackTrace();
     }
 
 
