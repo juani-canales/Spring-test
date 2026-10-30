@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Facturación</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="js/facturas.js" defer></script>
+</head>
+
+<body>
+
+    <header class="encabezado">
+        <div class="marca">
+            <span class="marca-icono">▤</span>
+            <h1>Sistema de Facturación</h1>
+        </div>
+        <span class="encabezado-subtitulo">Gestión de ventas</span>
+    </header>
+
+    <main class="contenedor">
+
+        <section class="titulo-pagina">
+            <div>
+                <h2>Facturas de Venta</h2>
+                <p>Administrá tus comprobantes de manera sencilla.</p>
+            </div>
+
+            <a href="nueva-factura.html"
+               id="btnNuevaFactura"
+               class="btn-primario">
+                + Nueva Factura
+            </a>
+
+        </section>
+
+        <section class="tarjeta">
+            <h3>Filtros de búsqueda</h3>
+            <p class="descripcion">
+                Seleccioná los criterios para buscar facturas registradas.
+            </p>
+
+            <form id="formFiltros">
+                <div class="grupo-filtros">
+
+                    <div class="campo">
+                        <label for="numeroFactura">Número de factura</label>
+                        <input type="text" id="numeroFactura"
+                               name="numeroFactura"
+                               placeholder="Ej. 0001-00001234">
+                    </div>
+
+                    <!--Al seleccionar (hacer click) sobre el campo de cliente se tiene que abrir un popover
+                    ,es decir, como una ventana que se abre sobre el contenido principal.
+                    En esta ventanita se tiene que mostrar campos para buscar el cliente. Me lo imagino similar como el
+                    formulario para filtrar las facturas de index.html,
+                    con los campos denominacion, cuitCuil, contacto y domicilio para filtrar.
+                    Si no ingreso nada en los campos para filtrar el cliente me muestre todos los clientes que tengo.
+                    El profesor no dijo que cuando mostramos los clientes, esa parte tiene que estar páginada. Esto lo entiendo
+                    como que me muestra 10 clientes en la página 1 y si selecciono la página 2 me muestra otros 10 y así sucesivamente.
+                    Nos dijo esto para que el backend no me traiga todos los clientes que tengo persistidos, sino que me los va trayendo
+                    de 10 en 10 (cada vez que selecciono otra página), para no cargar la memoria de clientes. -->
+                    <div class="campo">
+                        <label for="cliente">Cliente</label>
+                        <input type="text" id="cliente"
+                               name="cliente"
+                               placeholder="Buscar por cliente">
+                    </div>
+
+                    <div class="campo">
+                        <label for="fechaDesde">Fecha desde</label>
+                        <input type="date" id="fechaDesde" name="fechaDesde">
+                    </div>
+
+                    <div class="campo">
+                        <label for="fechaHasta">Fecha hasta</label>
+                        <input type="date" id="fechaHasta" name="fechaHasta">
+                    </div>
+
+                    <div class="campo">
+                        <label for="condicionIva">Condición IVA</label>
+                        <select id="condicionIva" name="condicionIva">
+                            <option value="">Todas</option>
+                        </select>
+                    </div>
+
+                    <div class="campo">
+                        <label for="filtroEstado">Estado de factura</label>
+                        <select id="filtroEstado" name="filtroEstado">
+                            <option value="EMITIDA" selected>Emitidas</option>
+                            <option value="ANULADA">Anuladas</option>
+                            <option value="TODAS">Todas (incluidas anuladas)</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="acciones-filtros">
+                    <button type="reset" class="btn-secundario">
+                        Limpiar
+                    </button>
+                    <button type="submit" class="btn-primario">
+                        Buscar facturas
+                    </button>
+                </div>
+            </form>
+        </section>
+
+
+        <section class="tarjeta">
+            <div class="cabecera-tabla">
+                <div>
+                    <h3>Listado de facturas</h3>
+                    <p class="descripcion">
+                        Consulte y administre los comprobantes registrados.
+                    </p>
+                </div>
+            </div>
+
+            <!--El profesor no dijo que debemos páginar al mostrar las facturas. Como con los clientes, mostramos 10 facturas
+            en la página 1 y si selecciono la página 2 muestro las siguientes 10 facturas que me va a devolver el back.-->
+            <div class="tabla-contenedor">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Condición IVA</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tablaFacturas">
+                    <tr>
+                        <td colspan="7" class="sin-datos">
+                            Todavía no hay facturas para mostrar.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+</body>
+</html>
