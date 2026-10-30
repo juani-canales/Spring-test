@@ -25,11 +25,11 @@ public class FacturaService {
     //Creación de factura
     @Transactional
     public FacturaReporteDTO crear(FacturaRequestDTO facturaRequestDTO) {
-        // Buscar las entidades asociadas por ID 
+        // Buscar las entidades asociadas por ID
+
         Cliente cliente = em.find(Cliente.class, facturaRequestDTO.clienteId());
-        if (cliente == null) {
-            throw new EntityNotFoundException("Cliente no encontrado.");
-        }
+        //No valido si el cliente es null porque si no me lanza un exception y no va a poder ser 'Consumidor Final'
+
         CondicionIva condicionIva = em.find(CondicionIva.class, facturaRequestDTO.condicionIvaId());
         if (condicionIva == null) {
             throw new EntityNotFoundException("Condicion Iva no encontrado.");

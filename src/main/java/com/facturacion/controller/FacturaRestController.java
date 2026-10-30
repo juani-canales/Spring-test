@@ -17,6 +17,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/facturas")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class FacturaRestController {
 
     private final FacturaService service;
@@ -32,32 +33,26 @@ public class FacturaRestController {
 
     @PostMapping
     public ResponseEntity<FacturaReporteDTO> crear (@RequestBody FacturaRequestDTO dto) {
-        try {
-            FacturaReporteDTO facturaCreada = service.crear(dto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(facturaCreada);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        FacturaReporteDTO facturaCreada = service.crear(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(facturaCreada);//201
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<FacturaReporteDTO> actualizar(@PathVariable Long id,
                                                         @RequestBody FacturaRequestDTO dto) {
-        try {
-            FacturaReporteDTO facturaActualizada = service.actualizar(id, dto);
-            return ResponseEntity.ok(facturaActualizada);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        FacturaReporteDTO facturaActualizada = service.actualizar(id, dto);
+        return ResponseEntity.ok(facturaActualizada);//200
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        try {
-            service.eliminar(id);
-            return ResponseEntity.noContent().build();
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        service.eliminar(id);
+        return ResponseEntity.noContent().build();//204
+    }
+
+    // Un único lugar que convierte "no existe" en 404 con un mensaje legible para el frontend. Recomendado por IA
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<Map<String, String>> manejarNoEncontrado(EntityNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("mensaje", e.getMessage()));
     }
 }

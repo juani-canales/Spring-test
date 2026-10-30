@@ -8,7 +8,7 @@ public record FacturaRequestDTO(
         Long condicionIvaId,
         Long puntoVentaId,
         Long tipoMonedaId,
-        double importeCobrado,
+        Double importeCobrado,
         String observaciones,
         List<FacturaDetalleRequestDTO> detalles
 ) {
