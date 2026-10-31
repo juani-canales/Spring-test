@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Facturación</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="js/facturas.js" defer></script>
+    <!-- type="module": necesario porque nuestros .ts usan import/export -->
+    <script type="module" src="js/app.js"></script>
 </head>
 
 <body>
@@ -50,21 +51,14 @@
                                placeholder="Ej. 0001-00001234">
                     </div>
 
-                    <!--Al seleccionar (hacer click) sobre el campo de cliente se tiene que abrir un popover
-                    ,es decir, como una ventana que se abre sobre el contenido principal.
-                    En esta ventanita se tiene que mostrar campos para buscar el cliente. Me lo imagino similar como el
-                    formulario para filtrar las facturas de index.html,
-                    con los campos denominacion, cuitCuil, contacto y domicilio para filtrar.
-                    Si no ingreso nada en los campos para filtrar el cliente me muestre todos los clientes que tengo.
-                    El profesor no dijo que cuando mostramos los clientes, esa parte tiene que estar páginada. Esto lo entiendo
-                    como que me muestra 10 clientes en la página 1 y si selecciono la página 2 me muestra otros 10 y así sucesivamente.
-                    Nos dijo esto para que el backend no me traiga todos los clientes que tengo persistidos, sino que me los va trayendo
-                    de 10 en 10 (cada vez que selecciono otra página), para no cargar la memoria de clientes. -->
+                    <!-- Al hacer clic se abre el popover de clientes (SelectorCliente.ts).
+                         El input visible muestra el nombre; el hidden guarda el id que se envía al backend. -->
                     <div class="campo">
                         <label for="cliente">Cliente</label>
-                        <input type="text" id="cliente"
-                               name="cliente"
-                               placeholder="Buscar por cliente">
+                        <input type="text" id="cliente" name="cliente"
+                               placeholder="Clic para buscar un cliente"
+                               readonly autocomplete="off">
+                        <input type="hidden" id="clienteId" name="clienteId">
                     </div>
 
                     <div class="campo">
@@ -140,6 +134,12 @@
                     </tr>
                     </tbody>
                 </table>
+            </div>
+            <!-- Controles de paginación de Facturas -->
+            <div id="paginacion-facturas" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem;">
+                <button type="button" id="btn-fac-prev">◀ Anterior</button>
+                <span id="info-pag-facturas">Página 1 de 1 (0 resultados)</span>
+                <button type="button" id="btn-fac-next">Siguiente ▶</button>
             </div>
         </section>
 

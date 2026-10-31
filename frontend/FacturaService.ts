@@ -1,56 +1,89 @@
-import {FacturaFiltrosDTO, FacturaReporteDTO, FacturaRequestDTO} from "./models/factura.dto";
+import type {
+    ArticuloPrecioDTO,
+    EstadoFactura,
+    FacturaFiltrosDTO,
+    FacturaReporteDTO,
+    FacturaRequestDTO,
+    Pagina
+} from "./models/factura.dto.js";
+import { verificarRespuesta } from "./utils.js";
 
-const API = "http://localhost:8080/api/facturas"
-
+const API = "http://localhost:8080/api/facturas";
 
 export class FacturaService {
 
-    async obtenerFacturas(filtros: FacturaFiltrosDTO): Promise<FacturaReporteDTO> {
+    // GET /api/facturas?numero=14&estado=EMITIDA&pagina=0&tamanio=10
+    async obtenerFacturas(
+        filtros: FacturaFiltrosDTO,
+        pagina: number = 0,
+        tamanio: number = 10
+    ): Promise<Pagina<FacturaReporteDTO>> {
 
-        //¿Cómo hago para obtener los filtros que ingreso el suario por el form de filtrado
-        // y luego buscar los filtros en el backend?
+        // URLSearchParams arma la parte "?clave=valor&clave=valor" y escapa los caracteres raros.
+        const params = new URLSearchParams();
+        params.set("pagina", String(pagina));
+        params.set("tamanio", String(tamanio));
 
+        // Solo mandamos los filtros que el usuario realmente completó.
+        if (filtros.numero !== undefined) params.set("numero", String(filtros.numero));
+        if (filtros.clienteId !== undefined) params.set("clienteId", String(filtros.clienteId));
+        if (filtros.fechaDesde) params.set("fechaDesde", filtros.fechaDesde);
+        if (filtros.fechaHasta) params.set("fechaHasta", filtros.fechaHasta);
+        if (filtros.estado) params.set("estado", filtros.estado);
+        if (filtros.montoMinimo !== undefined) params.set("montoMinimo", String(filtros.montoMinimo));
 
-        const respuesta = await fetch(API);
-        if (!respuesta.ok) throw Error(`HTTP ${respuesta.status}`);
+        const respuesta = await fetch(`${API}?${params.toString()}`);
+        await verificarRespuesta(respuesta);
 
-
-
-        const datos = await respuesta.json();
-        return datos.results;
+        const datos: Pagina<FacturaReporteDTO> = await respuesta.json();
+        return datos;
     }
 
-
+    // POST /api/facturas  ->  201 Created + FacturaReporteDTO
     async crearFactura(factura: FacturaRequestDTO): Promise<FacturaReporteDTO> {
+        const respuesta = await fetch(API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },   // avisamos que el cuerpo es JSON
+            body: JSON.stringify(factura)                       // objeto -> texto JSON
+        });
+        await verificarRespuesta(respuesta);
 
-        //Acá de los datos que ingresa del formulario para crear una nueva factura
-        // ¿Cómo hago para que el backend cree la nueva factura?
-
-
-        const respuesta = await fetch(API);
-        if (!respuesta.ok) throw Error(`HTTP ${respuesta.status}`);
-
-        const datos = await respuesta.json();
-        return datos.results;
+        const datos: FacturaReporteDTO = await respuesta.json();
+        return datos;
     }
 
+    // PUT /api/facturas/{id}  ->  200 OK + FacturaReporteDTO
+    // Mandamos un PUT "parcial": solo estado y observaciones (Partial = todos los campos opcionales).
+    async actualizarEstado(
+        id: number,
+        estado: EstadoFactura,
+        observaciones?: string
+    ): Promise<FacturaReporteDTO> {
+        const cambios: Partial<FacturaRequestDTO> = { estado, observaciones };
 
-    async actualizarEstado(id: number, estado: string, observaciones?: string): Promise<FacturaReporteDTO> {
+        const respuesta = await fetch(`${API}/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cambios)    // JSON.stringify omite los campos undefined
+        });
+        await verificarRespuesta(respuesta);
 
-        //Misma duda que los anteriores métodos.
-
-        const respuesta = await fetch(API);
-        if (!respuesta.ok) throw Error(`HTTP ${respuesta.status}`);
-
-        const datos = await respuesta.json();
-        return datos.results;
+        const datos: FacturaReporteDTO = await respuesta.json();
+        return datos;
     }
 
-
+    // DELETE /api/facturas/{id}  ->  204 No Content (no hay cuerpo, NO se llama a .json())
     async eliminarFactura(id: number): Promise<void> {
-        //Misma duda que los anteriores métodos
+        const respuesta = await fetch(`${API}/${id}`, { method: "DELETE" });
+        await verificarRespuesta(respuesta);
     }
 
+    // GET /api/facturas/articulos -> catálogo para los renglones del formulario
+    async obtenerArticulos(): Promise<ArticuloPrecioDTO[]> {
+        const respuesta = await fetch(`${API}/articulos`);
+        await verificarRespuesta(respuesta);
 
+        const datos: ArticuloPrecioDTO[] = await respuesta.json();
+        return datos;
+    }
 }
-

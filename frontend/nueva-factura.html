@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nueva Factura | Sistema de Facturación</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="popover.css">
+    <script type="module" src="js/nueva-factura.js"></script>
 </head>
 
 <body>
@@ -21,9 +23,7 @@
 
         <section class="titulo-pagina">
             <div>
-                <a href="index.html" class="enlace-volver">
-                    ← Volver al listado
-                </a>
+                <a href="index.html" class="enlace-volver">← Volver al listado</a>
                 <h2>Nueva Factura</h2>
                 <p>Completá los datos para registrar una factura de venta.</p>
             </div>
@@ -31,37 +31,24 @@
 
         <form id="formNuevaFactura" novalidate>
 
-            <div id="mensajeValidacion"
-                 class="mensaje-validacion"
-                 role="alert"
-                 aria-live="polite"
-                 hidden>
-            </div>
+            <div id="mensajeValidacion" class="mensaje-validacion" role="alert" aria-live="polite" hidden></div>
 
             <section class="tarjeta">
                 <h3>Datos de la factura</h3>
-                <p class="descripcion">
-                    Información general del comprobante.
-                </p>
+                <p class="descripcion">Información general del comprobante.</p>
 
                 <div class="grupo-filtros">
 
                     <div class="campo">
-                        <div class="campo">
-                            <label for="numeroFactura">Número de factura</label>
-                            <input
-                                    type="number"
-                                    id="numeroFactura"
-                                    name="numeroFactura"
-                                    placeholder="Ej.: 14"
-                                    min="1"
-                                    step="1"
-                                    required
-                            >
-                        </div>
+                        <label for="numeroFactura">Número de factura</label>
+                        <input type="number" id="numeroFactura" name="numeroFactura"
+                               placeholder="Ej.: 14" min="1" step="1" required>
+                    </div>
+
+                    <!-- La fecha de emisión la fija el servidor (new Date()): acá solo se muestra, no se edita -->
+                    <div class="campo">
                         <label for="fechaEmision">Fecha de emisión</label>
-                        <input type="date" id="fechaEmision"
-                               name="fechaEmision" required>
+                        <input type="date" id="fechaEmision" name="fechaEmision" readonly>
                     </div>
 
                     <div class="campo">
@@ -72,37 +59,16 @@
                         </select>
                     </div>
 
-                    <!--Al seleccionar (hacer click) sobre el campo de cliente se tiene que abrir un popover
-                    ,es decir, como una ventana que se abre sobre el contenido principal.
-                    En esta ventanita se tiene que mostrar campos para buscar el cliente. Me lo imagino similar como el
-                    formulario para filtrar las facturas de index.html,
-                    con los campos denominacion, cuitCuil, contacto y domicilio para filtrar.
-                    Si no ingreso nada en los campos para filtrar el cliente me muestre todos los clientes que tengo.
-                    El profesor no dijo que cuando mostramos los clientes, esa parte tiene que estar páginada. Esto lo entiendo
-                    como que me muestra 10 clientes en la página 1 y si selecciono la página 2 me muestra otros 10 y así sucesivamente.
-                    Nos dijo esto para que el backend no me traiga todos los clientes que tengo persistidos, sino que me los va trayendo
-                    de 10 en 10 (cada vez que selecciono otra página), para no cargar la memoria de clientes. -->
+                    <!-- Cliente OPCIONAL: si no se elige ninguno, la factura es de "Consumidor Final" -->
                     <div class="campo campo-cliente">
                         <label for="buscarCliente">Cliente</label>
-
-                        <input
-                                type="text"
-                                id="buscarCliente"
-                                placeholder="Escribí el nombre del cliente..."
-                                autocomplete="off"
-                                aria-controls="sugerenciasClientes"
-                                aria-autocomplete="list"
-                                aria-expanded="false"
-                                required
-                        >
-
-                        <input type="hidden" id="clienteId" name="clienteId">
-
-                        <div id="sugerenciasClientes"
-                             class="sugerencias-clientes"
-                             role="listbox"
-                             hidden>
+                        <div class="campo-con-boton">
+                            <input type="text" id="buscarCliente"
+                                   placeholder="Consumidor Final (clic para buscar un cliente)"
+                                   readonly autocomplete="off">
+                            <button type="button" id="btnQuitarCliente" class="btn-secundario" hidden>Quitar</button>
                         </div>
+                        <input type="hidden" id="clienteId" name="clienteId">
                     </div>
 
                     <div class="campo">
@@ -115,17 +81,11 @@
 
                     <div class="campo">
                         <label>Moneda de facturación</label>
-
                         <div class="moneda-fija">
                             <span>ARS — Peso argentino ($)</span>
                             <span class="moneda-etiqueta">Predeterminada</span>
                         </div>
-
-                        <input type="hidden"
-                               id="tipoMonedaId"
-                               name="tipoMonedaId"
-                               value="1"
-                        >
+                        <input type="hidden" id="tipoMonedaId" name="tipoMonedaId" value="1">
                     </div>
                 </div>
             </section>
@@ -135,15 +95,10 @@
                 <div class="cabecera-tabla">
                     <div>
                         <h3>Detalle de productos</h3>
-                        <p class="descripcion">
-                            Agregá los artículos incluidos en la factura.
-                        </p>
+                        <p class="descripcion">Agregá los artículos incluidos en la factura.</p>
                     </div>
 
-                    <button type="button" id="btnAgregarItem"
-                            class="btn-primario">
-                        + Agregar producto
-                    </button>
+                    <button type="button" id="btnAgregarItem" class="btn-primario">+ Agregar producto</button>
                 </div>
 
                 <div class="tabla-contenedor">
@@ -154,15 +109,13 @@
                             <th>Cantidad</th>
                             <th>Precio unitario</th>
                             <th>Bonificación (%)</th>
-                            <th>Subtotal</th>
+                            <th>Subtotal (con IVA)</th>
                             <th>Acciones</th>
                         </tr>
                         </thead>
                         <tbody id="tablaDetalles">
                         <tr>
-                            <td colspan="6" class="sin-datos">
-                                Todavía no agregaste productos.
-                            </td>
+                            <td colspan="6" class="sin-datos">Todavía no agregaste productos.</td>
                         </tr>
                         </tbody>
                     </table>
@@ -171,21 +124,17 @@
 
             <section class="tarjeta">
                 <h3>Resumen de la factura</h3>
-                <p class="descripcion">
-                    Importes correspondientes a los productos cargados.
-                </p>
+                <p class="descripcion">Importes correspondientes a los productos cargados (vista previa; el total oficial lo calcula el servidor).</p>
 
                 <div class="resumen-factura">
                     <div class="fila-resumen">
                         <span>Importe neto</span>
                         <strong id="importeNeto">$ 0,00</strong>
                     </div>
-
                     <div class="fila-resumen">
                         <span>IVA</span>
                         <strong id="importeIva">$ 0,00</strong>
                     </div>
-
                     <div class="fila-resumen total">
                         <span>Total de la factura</span>
                         <strong id="importeTotal">$ 0,00</strong>
@@ -193,20 +142,13 @@
                 </div>
 
                 <div class="acciones-filtros">
-                    <a href="index.html" class="btn-secundario">
-                        Cancelar
-                    </a>
-
-                    <button type="submit" class="btn-primario">
-                        Guardar factura
-                    </button>
+                    <a href="index.html" class="btn-secundario">Cancelar</a>
+                    <button type="submit" class="btn-primario">Guardar factura</button>
                 </div>
             </section>
 
         </form>
     </main>
-
-    <script src="js/factura-form.js" defer></script>
 
 </body>
 </html>
