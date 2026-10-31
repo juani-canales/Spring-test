@@ -14,10 +14,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/facturas")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class FacturaRestController {
 
     private final FacturaService service;
