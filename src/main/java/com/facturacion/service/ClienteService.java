@@ -21,7 +21,7 @@ public class ClienteService {
     @Transactional(readOnly = true)
     public PaginaDTO<ClienteResumenDTO> buscar(String denominacion, String cuitCuil, String contacto,
                                                String domicilio, int pagina, int tamanio) {
-        // Protegemos al backend de valores raros (pagina negativa, tamanio = 100000...)
+        // Protegemos al backend de valores raros (página negativa, tamanio = 100000...)
         int pag = Math.max(pagina, 0);
         int tam = Math.min(Math.max(tamanio, 1), 100);
 

@@ -7,7 +7,7 @@ import {
     mensajeDeError, obtener, renderizarPaginacion
 } from "./utils.js";
 
-const TAMANIO_PAGINA = 10;
+const TAMANIO_PAGINA = 5;
 
 // --------- 1. Elementos del DOM
 const servicio = new FacturaService();

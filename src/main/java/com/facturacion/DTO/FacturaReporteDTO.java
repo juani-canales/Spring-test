@@ -13,24 +13,27 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class FacturaReporteDTO {
-
+    private Long id;
     private Long numeroFactura;
     private Date fechaEmision;
     private String clienteDenominacion;
     private String condicionIva;
     private String puntoVentaDescripcion;
     private double importeTotal;
+    private String estado;
     private long cantidadItems;
 
     public static FacturaReporteDTO toEntity(FacturaVenta factura){
         String clienteDenom = (factura.getCliente() != null) ? factura.getCliente().getDenominacion() : "Consumidor Final";
         return new FacturaReporteDTO(
+                factura.getId(),
                 factura.getNumero(),
                 factura.getFechaEmision(),
                 clienteDenom,
                 factura.getCondicionIva().getDenominacion(),
                 factura.getPuntoVenta().getDescripcion(),
                 factura.getImporteTotal(),
+                factura.getEstado(),
                 factura.getDetalles().size()
         );
     }

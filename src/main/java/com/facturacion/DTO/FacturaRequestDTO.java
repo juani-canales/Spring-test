@@ -10,6 +10,7 @@ public record FacturaRequestDTO(
         Long tipoMonedaId,
         Double importeCobrado,
         String observaciones,
+        String estado,
         List<FacturaDetalleRequestDTO> detalles
 ) {
 }

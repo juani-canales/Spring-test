@@ -2,7 +2,7 @@ import { ClienteService } from "./ClienteService.js";
 import type { ClienteFiltrosDTO, ClienteResumenDTO, Pagina } from "./models/factura.dto.js";
 import { crearCelda, leerTexto, mensajeDeError, obtener, renderizarPaginacion } from "./utils.js";
 
-const TAMANIO_PAGINA = 10;
+const TAMANIO_PAGINA = 5;
 
 /**
  * Ventana (popover) para buscar y elegir un cliente, con filtros y paginación.
@@ -101,7 +101,7 @@ export class SelectorCliente {
         });
     }
 
-    // ------------------------------------------------------------------ eventos
+    // --------- eventos
     private conectarEventos(): void {
         this.formulario.addEventListener("submit", (event: Event) => {
             event.preventDefault();
@@ -143,7 +143,7 @@ export class SelectorCliente {
         this.dialogo.close();         // ...y después cerramos (el evento 'close' ya no tiene a quién avisar)
     }
 
-    // ------------------------------------------------------------ datos y dibujo
+    // ------- datos y dibujo
     private async cargar(pagina: number): Promise<void> {
         this.textoEstado.textContent = "Cargando clientes...";
         try {

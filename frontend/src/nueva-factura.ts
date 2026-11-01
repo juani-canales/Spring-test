@@ -41,11 +41,11 @@ const textoNeto = obtener<HTMLElement>("#importeNeto");
 const textoIva = obtener<HTMLElement>("#importeIva");
 const textoTotal = obtener<HTMLElement>("#importeTotal");
 
-// --------------------------------------------------------------- Estado en memoria
+// -------- Estado en memoria
 let catalogo: ArticuloPrecioDTO[] = [];     // artículos que trae el backend
 const items: ItemFactura[] = [];            // renglones cargados por el usuario
 
-// --------------------------------------------------------------------- Cálculos
+// -------- Cálculos
 function calcularImportes(item: ItemFactura): ImportesItem {
     if (item.articulo === null) return { neto: 0, iva: 0, subtotal: 0 };
 
@@ -68,7 +68,7 @@ function actualizarResumen(): void {
     textoTotal.textContent = formatearMoneda(neto + iva);
 }
 
-// ------------------------------------------------------------ Tabla de renglones
+// ------- Tabla de renglones
 function envolverEnCelda(elemento: HTMLElement): HTMLTableCellElement {
     const celda = document.createElement("td");
     celda.appendChild(elemento);
@@ -131,7 +131,7 @@ function crearFilaItem(item: ItemFactura): HTMLTableRowElement {
     });
     botonQuitar.addEventListener("click", () => {
         items.splice(items.indexOf(item), 1);         // sacamos el renglón del array...
-        renderizarTabla();                            // ...y redibujamos
+        renderizarTabla();                                       // ...y redibujamos
     });
 
     refrescarFila();                                   // valores iniciales
@@ -161,7 +161,7 @@ function renderizarTabla(): void {
     actualizarResumen();
 }
 
-// ------------------------------------------------------------- Validación y envío
+// -------- Validación y envío
 function validar(): string[] {
     const errores: string[] = [];
     const datos = new FormData(formulario);
@@ -245,7 +245,7 @@ async function guardarFactura(): Promise<void> {
     }
 }
 
-// ------------------------------------------------------------------ Cliente
+// --------- Cliente
 async function abrirSelectorCliente(): Promise<void> {
     const cliente = await selectorCliente.elegir();
     if (cliente === null) return;

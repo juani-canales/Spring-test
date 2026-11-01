@@ -14,7 +14,7 @@ public class TpSpringGrupalApplication {
 		SpringApplication.run(TpSpringGrupalApplication.class, args);
 	}
 
-	//Descomentar desde @Bean para poder ver las consultar y los reportes al ejecutar el program
+	//Descomentar desde @Bean para poder ver las consultas y los reportes al ejecutar el programa
 	/*
 	@Bean
 	public CommandLineRunner init(FacturacionReporteService reportes, ConsultasJPQL consultas) {

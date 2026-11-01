@@ -5,11 +5,11 @@ const API_CLIENTES = "http://localhost:8080/api/clientes";
 
 export class ClienteService {
 
-    // GET /api/clientes?denominacion=juan&pagina=0&tamanio=10
+    // GET /api/clientes?denominacion=juan&pagina=0&tamanio=5
     async buscarClientes(
         filtros: ClienteFiltrosDTO,
         pagina: number = 0,
-        tamanio: number = 10
+        tamanio: number = 5
     ): Promise<Pagina<ClienteResumenDTO>> {
         const params = new URLSearchParams();
         params.set("pagina", String(pagina));

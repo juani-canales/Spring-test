@@ -14,7 +14,7 @@ public class ClienteRestController {
 
     private final ClienteService service;
 
-    // GET /api/clientes?denominacion=juan&pagina=0&tamanio=10
+    // GET /api/clientes?denominacion=juan&pagina=0&tamanio=5
     @GetMapping
     public PaginaDTO<ClienteResumenDTO> buscar(
             @RequestParam(required = false) String denominacion,
@@ -22,7 +22,7 @@ public class ClienteRestController {
             @RequestParam(required = false) String contacto,
             @RequestParam(required = false) String domicilio,
             @RequestParam(defaultValue = "0") int pagina,
-            @RequestParam(defaultValue = "10") int tamanio) {
+            @RequestParam(defaultValue = "5") int tamanio) {
 
         return service.buscar(denominacion, cuitCuil, contacto, domicilio, pagina, tamanio);
     }

@@ -1,7 +1,9 @@
 package com.facturacion.controller;
 
+import com.facturacion.DTO.ArticuloPrecioDTO;
 import com.facturacion.DTO.FacturaReporteDTO;
 import com.facturacion.DTO.FacturaRequestDTO;
+import com.facturacion.DTO.PaginaDTO;
 import com.facturacion.service.FacturaService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -23,12 +25,22 @@ public class FacturaRestController {
     private final FacturaService service;
 
     @GetMapping
-    public List<FacturaReporteDTO> listar (@RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaDesde,
-                                           @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaHasta,
-                                           @RequestParam(required = false) String estado,
-                                           @RequestParam(required = false) Double montoMinimo) {
+    public PaginaDTO<FacturaReporteDTO> listar (@RequestParam(required = false) Long numero,
+                                                @RequestParam(required = false) Long clienteId,
+                                                @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaDesde,
+                                                @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaHasta,
+                                                @RequestParam(required = false) String estado,
+                                                @RequestParam(required = false) Double montoMinimo,
+                                                @RequestParam(defaultValue = "0") int pagina,
+                                                @RequestParam(defaultValue = "5") int tamanio){
 
-        return service.buscarFacturasFiltradas(fechaDesde, fechaHasta, estado, montoMinimo);
+        return service.buscarFacturasFiltradas(numero, clienteId, fechaDesde, fechaHasta, estado, montoMinimo, pagina, tamanio);
+    }
+
+    // GET /api/facturas/articulos -> catálogo para el formulario de alta
+    @GetMapping("/articulos")
+    public List<ArticuloPrecioDTO> articulos() {
+        return service.listarArticulosConPrecio();
     }
 
     @PostMapping
