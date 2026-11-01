@@ -211,12 +211,16 @@ public class FacturaService {
         // Ojo: dto.articuloId() es el ID de ListaPrecioArticulo (el precio vigente del artículo)
         ListaPrecioArticulo lpa = buscarObligatorio(ListaPrecioArticulo.class, dto.articuloId(), "Artículo con precio");
 
+        // Si no viene la cantidad o la bonificación, usamos un valor por defecto
+        double cantidad = dto.cantidad() != null ? dto.cantidad() : 0.0;
+        double bonificacion = dto.porcentajeBonificacion() != null ? dto.porcentajeBonificacion() : 0.0;
+
         FacturaVentaDetalle detalle = new FacturaVentaDetalle();
         detalle.setListaPrecioArticulo(lpa);
         detalle.setDescripcion(dto.descripcion() != null ? dto.descripcion() : lpa.getArticulo().getDenominacion());
-        detalle.setCantidad(dto.cantidad());
+        detalle.setCantidad(cantidad);
         detalle.setPrecioUnitario(lpa.getPrecioVenta());   // el precio lo decide el servidor, no el cliente
-        detalle.setPorcentajeBonificacion(dto.porcentajeBonificacion());
+        detalle.setPorcentajeBonificacion(bonificacion);
 
         double bruto = detalle.getCantidad() * detalle.getPrecioUnitario();
         double neto = bruto - bruto * (detalle.getPorcentajeBonificacion() / 100.0);

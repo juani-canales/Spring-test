@@ -268,7 +268,7 @@ botonQuitarCliente.addEventListener("click", () => {
     botonQuitarCliente.hidden = true;
 });
 
-// ------------------------------------------------------------ Eventos generales
+// ------ Eventos generales
 botonAgregar.addEventListener("click", () => {
     items.push({ articulo: null, cantidad: 1, porcentajeBonificacion: 0 });
     renderizarTabla();
@@ -279,7 +279,7 @@ formulario.addEventListener("submit", (event: Event) => {
     void guardarFactura();
 });
 
-// --------------------------------------------------------------------- Arranque
+// -------- Arranque
 async function iniciar(): Promise<void> {
     inputFecha.value = fechaDeHoy();          // la fecha real la fija el servidor; acá solo se muestra
     try {

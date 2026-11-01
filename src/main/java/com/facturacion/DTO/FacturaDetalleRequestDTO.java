@@ -2,10 +2,10 @@ package com.facturacion.DTO;
 
 public record FacturaDetalleRequestDTO(
         Long articuloId,
-        double cantidad,
+        Double cantidad,
         String descripcion,
-        double porcentajeBonificacion,
-        double precioUnitario,
-        double subtotal
+        Double porcentajeBonificacion,
+        Double precioUnitario,
+        Double subtotal
 ) {
 }

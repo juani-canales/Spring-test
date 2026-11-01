@@ -1,0 +1,172 @@
+/* Sistema de Facturación — estilos compartidos
+   Paleta clara, contraste legible y diseño adaptable. */
+
+:root {
+    color-scheme: light;
+    --fondo: #f4f7fb;
+    --superficie: #fff;
+    --superficie-suave: #f8fafc;
+    --texto: #172033;
+    --texto-secundario: #64748b;
+    --borde: #dce4ef;
+    --primario: #2563eb;
+    --primario-hover: #1d4ed8;
+    --exito: #166534;
+    --radio: 14px;
+    --sombra: 0 8px 24px rgba(30, 41, 59, .07);
+}
+
+* { box-sizing: border-box; }
+html { min-width: 320px; background: var(--fondo); }
+body {
+    margin: 0; color: var(--texto); background: var(--fondo);
+    font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px; line-height: 1.5;
+}
+button, input, select { font: inherit; }
+button, a, input, select { -webkit-tap-highlight-color: transparent; }
+
+.encabezado {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 1.1rem clamp(1rem, 4vw, 3rem); color: #1e293b;
+    background: #fff; border-bottom: 1px solid var(--borde);
+}
+.marca { display: flex; align-items: center; gap: .8rem; }
+.marca h1 { margin: 0; font-size: clamp(1rem, 2vw, 1.25rem); font-weight: 750; letter-spacing: -.025em; }
+.marca-icono {
+    display: grid; place-items: center; width: 42px; height: 42px; color: #fff;
+    background: var(--primario); border-radius: 12px; font-size: 1.4rem;
+}
+.encabezado-subtitulo { color: var(--texto-secundario); font-size: .9rem; }
+
+.contenedor { width: min(1180px, calc(100% - 2rem)); margin: 2rem auto 4rem; }
+.titulo-pagina { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; margin-bottom: 1.5rem; }
+.titulo-pagina h2 { margin: .25rem 0 .35rem; font-size: clamp(1.6rem, 3vw, 2rem); letter-spacing: -.04em; }
+.titulo-pagina p { margin: 0; color: var(--texto-secundario); }
+.enlace-volver { display: inline-block; color: var(--primario); font-weight: 650; text-decoration: none; }
+.enlace-volver:hover { text-decoration: underline; }
+
+.tarjeta {
+    margin: 0 0 1.35rem; padding: clamp(1rem, 2.4vw, 1.6rem);
+    background: var(--superficie); border: 1px solid var(--borde);
+    border-radius: var(--radio); box-shadow: var(--sombra);
+}
+.tarjeta h3 { margin: 0 0 .35rem; font-size: 1.08rem; letter-spacing: -.015em; }
+.descripcion { margin: 0 0 1.25rem; color: var(--texto-secundario); font-size: .92rem; }
+.grupo-filtros { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.campo { display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
+.campo label { color: #334155; font-size: .88rem; font-weight: 650; }
+input[type="text"], input[type="number"], input[type="date"], select {
+    width: 100%; min-width: 0; min-height: 43px; padding: .65rem .8rem;
+    color: var(--texto); background: #fff; border: 1px solid #cbd5e1;
+    border-radius: 9px; outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+input::placeholder { color: #94a3b8; }
+input[readonly] { cursor: pointer; background: #f8fafc; }
+input:focus, select:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(59, 130, 246, .15); }
+input:disabled, select:disabled, button:disabled { opacity: .6; cursor: not-allowed; }
+
+.acciones-filtros { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: .7rem; margin-top: 1.25rem; }
+.btn-primario, .btn-secundario, .paginacion button, .btn-peligro {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 40px;
+    padding: .6rem 1rem; border: 1px solid transparent; border-radius: 9px;
+    font-weight: 700; text-decoration: none; cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, transform .15s ease;
+}
+.btn-primario { color: #fff; background: var(--primario); }
+.btn-primario:hover { background: var(--primario-hover); }
+.btn-secundario, .paginacion button { color: #334155; background: #fff; border-color: #cbd5e1; }
+.btn-secundario:hover, .paginacion button:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
+.btn-primario:active, .btn-secundario:active, .btn-peligro:active { transform: translateY(1px); }
+
+.cabecera-tabla { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: .75rem; }
+.cabecera-tabla .descripcion { margin-bottom: .25rem; }
+.tabla-contenedor { width: 100%; overflow-x: auto; border: 1px solid var(--borde); border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; background: #fff; text-align: left; }
+th, td { padding: .8rem .9rem; border-bottom: 1px solid #e8edf4; vertical-align: middle; }
+th { color: #475569; background: #f8fafc; font-size: .78rem; font-weight: 750; letter-spacing: .035em; text-transform: uppercase; white-space: nowrap; }
+td { font-size: .9rem; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:hover { background: #f8fbff; }
+.sin-datos { padding: 1.8rem 1rem; color: var(--texto-secundario); text-align: center; }
+.paginacion { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--texto-secundario); font-size: .9rem; }
+.paginacion button:disabled { opacity: .45; cursor: not-allowed; }
+
+.mensaje-exito, .mensaje-validacion { margin-bottom: 1rem; padding: .85rem 1rem; border-radius: 10px; white-space: pre-line; }
+.mensaje-exito { color: var(--exito); background: #f0fdf4; border: 1px solid #bbf7d0; }
+.mensaje-validacion { color: #991b1b; background: #fef2f2; border: 1px solid #fecaca; }
+[hidden] { display: none !important; }
+
+.campo-con-boton { display: flex; align-items: center; gap: .5rem; }
+.campo-con-boton input { flex: 1; min-width: 0; }
+.moneda-fija { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; min-height: 43px; padding: .6rem .8rem; background: var(--superficie-suave); border: 1px solid var(--borde); border-radius: 9px; }
+.moneda-etiqueta { padding: .15rem .5rem; color: #1d4ed8; background: #dbeafe; border-radius: 999px; font-size: .75rem; font-weight: 700; }
+.resumen-factura { max-width: 480px; margin-left: auto; padding: 1rem; background: var(--superficie-suave); border: 1px solid var(--borde); border-radius: 12px; }
+.fila-resumen { display: flex; justify-content: space-between; gap: 1rem; padding: .65rem 0; color: #475569; }
+.fila-resumen strong { color: var(--texto); font-variant-numeric: tabular-nums; }
+.fila-resumen.total { margin-top: .4rem; padding-top: 1rem; border-top: 1px solid var(--borde); color: var(--texto); font-size: 1.05rem; font-weight: 750; }
+.fila-resumen.total strong { color: var(--primario); font-size: 1.25rem; }
+
+/* Dialog nativo del selector de clientes, usado en ambas páginas. */
+.dialogo-clientes {
+    width: min(1050px, calc(100vw - 2rem)); max-width: 1050px;
+    max-height: min(88vh, 850px); margin: auto; padding: 0; overflow: auto;
+    color: var(--texto); background: #fff; border: 1px solid #dbe4ef;
+    border-radius: 18px; box-shadow: 0 24px 80px rgba(15, 23, 42, .22);
+}
+.dialogo-clientes::backdrop { background: rgba(30, 41, 59, .42); backdrop-filter: blur(3px); }
+.dialogo-clientes > .dialogo-cabecera {
+    position: sticky; top: 0; z-index: 2; display: flex; align-items: center;
+    justify-content: space-between; gap: 1rem; padding: 1.15rem 1.35rem;
+    background: #fff; border-bottom: 1px solid var(--borde);
+}
+.dialogo-cabecera h3 { margin: 0; font-size: 1.2rem; letter-spacing: -.02em; }
+.dialogo-cerrar {
+    display: grid; place-items: center; width: 38px; height: 38px;
+    color: #64748b; background: #f1f5f9; border: 1px solid #e2e8f0;
+    border-radius: 10px; cursor: pointer;
+}
+.dialogo-cerrar:hover { color: #0f172a; background: #e2e8f0; }
+.dialogo-clientes .dialogo-filtros { padding: 1.2rem 1.35rem 0; }
+.dialogo-clientes .grupo-filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.dialogo-clientes .acciones-filtros { margin-top: 1rem; }
+.dialogo-estado { min-height: 1.4rem; margin: .9rem 1.35rem; color: var(--texto-secundario); font-size: .9rem; }
+.dialogo-clientes .tabla-contenedor { width: calc(100% - 2.7rem); margin: 0 1.35rem; }
+.dialogo-clientes th { font-size: .74rem; }
+.dialogo-clientes td { padding: .7rem .8rem; }
+.dialogo-clientes .paginacion { padding: 0 1.35rem 1.25rem; }
+.dialogo-clientes .paginacion button { min-height: 36px; }
+.dialogo-clientes tbody td:last-child { white-space: nowrap; }
+.dialogo-clientes tbody td:last-child .btn-primario { min-height: 34px; padding: .4rem .8rem; font-size: .85rem; }
+
+@media (max-width: 850px) {
+    .grupo-filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .contenedor { margin-top: 1.4rem; }
+}
+@media (max-width: 560px) {
+    .encabezado { align-items: flex-start; }
+    .encabezado-subtitulo { display: none; }
+    .contenedor { width: calc(100% - 1rem); margin-top: 1rem; }
+    .titulo-pagina { align-items: flex-start; flex-direction: column; }
+    .titulo-pagina > .btn-primario { width: 100%; }
+    .grupo-filtros, .dialogo-clientes .grupo-filtros { grid-template-columns: minmax(0, 1fr); }
+    .tarjeta { padding: 1rem; border-radius: 12px; }
+    .acciones-filtros > * { flex: 1; }
+    .dialogo-clientes { width: calc(100vw - 1rem); max-height: 92vh; border-radius: 14px; }
+    .dialogo-clientes > .dialogo-cabecera { padding: 1rem; }
+    .dialogo-clientes .dialogo-filtros { padding: 1rem 1rem 0; }
+    .dialogo-estado { margin: .75rem 1rem; }
+    .dialogo-clientes .tabla-contenedor { width: calc(100% - 2rem); margin: 0 1rem; }
+    .dialogo-clientes .paginacion { padding: 0 1rem 1rem; }
+    .resumen-factura { max-width: none; }
+}
+
+.btn-peligro {
+    background-color: #fff1f2;
+    color: #b42335;
+    border-color: #b42335;
+}
+.btn-peligro:hover {
+    background-color: #ffe4e6;
+}
