@@ -1,9 +1,6 @@
 package com.facturacion.controller;
 
-import com.facturacion.DTO.ArticuloPrecioDTO;
-import com.facturacion.DTO.FacturaReporteDTO;
-import com.facturacion.DTO.FacturaRequestDTO;
-import com.facturacion.DTO.PaginaDTO;
+import com.facturacion.DTO.*;
 import com.facturacion.service.FacturaService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -37,10 +34,23 @@ public class FacturaRestController {
         return service.buscarFacturasFiltradas(numero, clienteId, fechaDesde, fechaHasta, estado, montoMinimo, pagina, tamanio);
     }
 
+    // NUEVO: GET /api/facturas/listas-precio -> para llenar el <select> de lista de precios
+    @GetMapping("/listas-precio")
+    public List<ListaPrecioDTO> listasPrecio() {
+        return service.listarListasPrecio();
+    }
+
     // GET /api/facturas/articulos -> catálogo para el formulario de alta
     @GetMapping("/articulos")
-    public List<ArticuloPrecioDTO> articulos() {
-        return service.listarArticulosConPrecio();
+    public List<ArticuloPrecioDTO> articulos(@RequestParam Long listaPrecioId) {
+        return service.listarArticulosConPrecio(listaPrecioId);
+    }
+
+    // GET /api/facturas/{id} -> datos completos para precargar la pantalla de edición
+    // (Spring prefiere las rutas "literales" como /articulos antes que /{id}, no hay conflicto)
+    @GetMapping("/{id}")
+    public FacturaEdicionDTO obtener(@PathVariable Long id) {
+        return service.obtenerParaEdicion(id);
     }
 
     @PostMapping
@@ -62,9 +72,15 @@ public class FacturaRestController {
         return ResponseEntity.noContent().build();//204
     }
 
-    // Un único lugar que convierte "no existe" en 404 con un mensaje legible para el frontend. Recomendado por IA
+    // Un único lugar que convierte "no existe" en 404 con un mensaje legible para el frontend.
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<Map<String, String>> manejarNoEncontrado(EntityNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("mensaje", e.getMessage()));
+    }
+
+    // Reglas de negocio incumplidas (artículo de otra lista, factura anulada...) -> 400 Bad Request
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> manejarReglaDeNegocio(IllegalArgumentException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("mensaje", e.getMessage()));
     }
 }

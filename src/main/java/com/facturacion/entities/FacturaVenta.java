@@ -89,9 +89,12 @@ public class FacturaVenta extends AuditoriaApp {
 
     private String observaciones;
 
+    // orphanRemoval = true -> al hacer detalles.clear() Hibernate BORRA de la BD
+    // los renglones que ya no están en la lista. Sin esto, editar duplicaría renglones.
     @OneToMany(
             mappedBy = "factura",
-            cascade = CascadeType.ALL
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
     )
     private List<FacturaVentaDetalle> detalles = new ArrayList<>();
 

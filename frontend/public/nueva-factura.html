@@ -79,6 +79,15 @@
                         </select>
                     </div>
 
+                    <!-- Lista de precios. Las opciones las carga nueva-factura.ts desde el backend.
+                         Al elegirla se cargan los artículos disponibles para los renglones. -->
+                    <div class="campo">
+                        <label for="listaPrecioId">Lista de precios</label>
+                        <select id="listaPrecioId" name="listaPrecioId" required>
+                            <option value="">Seleccionar lista de precios</option>
+                        </select>
+                    </div>
+
                     <div class="campo">
                         <label>Moneda de facturación</label>
                         <div class="moneda-fija">
@@ -95,10 +104,11 @@
                 <div class="cabecera-tabla">
                     <div>
                         <h3>Detalle de productos</h3>
-                        <p class="descripcion">Agregá los artículos incluidos en la factura.</p>
+                        <p class="descripcion">Elegí primero la lista de precios y después agregá los artículos de esa lista.</p>
                     </div>
 
-                    <button type="button" id="btnAgregarItem" class="btn-primario">+ Agregar producto</button>
+                    <!-- Empieza deshabilitado: nueva-factura.ts lo habilita cuando hay una lista elegida -->
+                    <button type="button" id="btnAgregarItem" class="btn-primario" disabled>+ Agregar producto</button>
                 </div>
 
                 <div class="tabla-contenedor">

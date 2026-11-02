@@ -29,6 +29,7 @@ export interface FacturaRequestDTO {
     condicionIvaId: number;
     puntoVentaId: number;
     tipoMonedaId: number;
+    listaPrecioId?: number;          // Opcional acá porque el PUT parcial (edición) puede omitirlo
     importeCobrado?: number;
     observaciones?: string;
     estado?: string;
@@ -44,7 +45,7 @@ export interface FacturaFiltrosDTO {
     clienteId?: number;
 }
 
-// ---- Espejo de PaginaDTO<T>.java (T = tipo de cada elemento) ---------------
+// ---- Espejo de PaginaDTO<T>.java (T = tipo de cada elemento)
 export interface Pagina<T> {
     contenido: T[];
     pagina: number;                // 0-based: la primera página es la 0
@@ -53,7 +54,7 @@ export interface Pagina<T> {
     totalPaginas: number;
 }
 
-// ---- Espejo de ClienteResumenDTO.java --------------------------------------
+// ---- Espejo de ClienteResumenDTO.java
 export interface ClienteResumenDTO {
     id: number;
     denominacion: string;
@@ -71,10 +72,44 @@ export interface ClienteFiltrosDTO {
     domicilio?: string;
 }
 
-// ---- Espejo de ArticuloPrecioDTO.java --------------------------------------
+// ---- Espejo de ArticuloPrecioDTO.java
 export interface ArticuloPrecioDTO {
     listaPrecioArticuloId: number;
     codigo: string;
     denominacion: string;
     precioVenta: number;
+}
+
+// ---- Espejo de ListaPrecioDTO.java
+export interface ListaPrecioDTO {
+    id: number;
+    codigo: string;
+    denominacion: string;
+}
+
+// ---- Espejo de FacturaItemEdicionDTO.java
+export interface FacturaItemEdicionDTO {
+    listaPrecioArticuloId: number;
+    codigo: string;
+    denominacion: string;
+    precioUnitario: number;
+    cantidad: number;
+    porcentajeBonificacion: number;
+}
+
+// ---- Espejo de FacturaEdicionDTO.java
+export interface FacturaEdicionDTO {
+    id: number;
+    numero: number;
+    fechaEmision: string;
+    puntoVentaId: number;
+    puntoVentaDescripcion: string;
+    clienteId: number | null;          // null = Consumidor Final
+    clienteDenominacion: string;
+    condicionIvaId: number;
+    condicionIvaDenominacion: string;
+    listaPrecioId: number | null;      // se deduce de los renglones; null = la factura no tiene renglones
+    listaPrecioDescripcion: string | null;
+    estado: string;
+    detalles: FacturaItemEdicionDTO[];
 }

@@ -49,14 +49,39 @@ export class FacturaService {
         const datos = await respuesta.json();
         return datos;
     }
+    // NUEVO: PUT /api/facturas/{id} con lista de precios + renglones (edición de artículos)
+    async actualizarFactura(id, cambios) {
+        const respuesta = await fetch(`${API}/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cambios)
+        });
+        await verificarRespuesta(respuesta);
+        const datos = await respuesta.json();
+        return datos;
+    }
+    // NUEVO: GET /api/facturas/{id} -> datos completos para precargar la pantalla de edición
+    async obtenerFacturaParaEdicion(id) {
+        const respuesta = await fetch(`${API}/${id}`);
+        await verificarRespuesta(respuesta);
+        const datos = await respuesta.json();
+        return datos;
+    }
     // DELETE /api/facturas/{id}  ->  204 No Content (no hay cuerpo, NO se llama a .json())
     async eliminarFactura(id) {
         const respuesta = await fetch(`${API}/${id}`, { method: "DELETE" });
         await verificarRespuesta(respuesta);
     }
-    // GET /api/facturas/articulos -> catálogo para los renglones del formulario
-    async obtenerArticulos() {
-        const respuesta = await fetch(`${API}/articulos`);
+    // NUEVO: GET /api/facturas/listas-precio -> opciones del <select> de lista de precios
+    async obtenerListasPrecio() {
+        const respuesta = await fetch(`${API}/listas-precio`);
+        await verificarRespuesta(respuesta);
+        const datos = await respuesta.json();
+        return datos;
+    }
+    // CAMBIÓ: GET /api/facturas/articulos?listaPrecioId=1 -> solo los artículos de ESA lista
+    async obtenerArticulos(listaPrecioId) {
+        const respuesta = await fetch(`${API}/articulos?listaPrecioId=${listaPrecioId}`);
         await verificarRespuesta(respuesta);
         const datos = await respuesta.json();
         return datos;

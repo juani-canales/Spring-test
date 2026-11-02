@@ -26,6 +26,11 @@ public class FacturaService {
     @Transactional
     public FacturaReporteDTO crear(FacturaRequestDTO dto) {
 
+        // La lista de precios de una factura se deduce de sus renglones, por eso necesita al menos uno.
+        if (dto.detalles() == null || dto.detalles().isEmpty()) {
+            throw new IllegalArgumentException("La factura debe tener al menos un artículo.");
+        }
+
         // El cliente es OPCIONAL (si no viene, es "Consumidor Final").
         // Ojo: em.find(Cliente.class, null) lanza IllegalArgumentException, por eso
         // solo buscamos si el id no es null.
@@ -36,6 +41,7 @@ public class FacturaService {
         CondicionIva condicionIva = buscarObligatorio(CondicionIva.class, dto.condicionIvaId(), "Condición IVA");
         PuntoVenta puntoVenta = buscarObligatorio(PuntoVenta.class, dto.puntoVentaId(), "Punto de venta");
         TipoMoneda tipoMoneda = buscarObligatorio(TipoMoneda.class, dto.tipoMonedaId(), "Tipo de moneda");
+        ListaPrecio listaPrecio = buscarObligatorio(ListaPrecio.class, dto.listaPrecioId(), "Lista de precios");
 
         FacturaVenta factura = new FacturaVenta();
         factura.setNumero(dto.numero());
@@ -54,10 +60,8 @@ public class FacturaService {
             factura.registrarAlta(usuarioAuditoria, new Date());
         }
 
-        if (dto.detalles() != null) {
-            for (FacturaDetalleRequestDTO detalleDto : dto.detalles()) {
-                factura.agregarDetalle(construirDetalle(detalleDto));
-            }
+        for (FacturaDetalleRequestDTO detalleDto : dto.detalles()) {
+            factura.agregarDetalle(construirDetalle(detalleDto, listaPrecio));
         }
 
         factura.calcularImportes();
@@ -71,6 +75,12 @@ public class FacturaService {
     @Transactional
     public FacturaReporteDTO actualizar(Long id, FacturaRequestDTO dto) {
         FacturaVenta factura = buscarObligatorio(FacturaVenta.class, id, "Factura");
+
+        // Una factura anulada no admite cambios de artículos
+        boolean editaRenglones = dto.detalles() != null;
+        if (editaRenglones && "ANULADA".equals(factura.getEstado())) {
+            throw new IllegalArgumentException("No se pueden modificar los artículos de una factura anulada.");
+        }
 
         if (dto.puntoVentaId() != null) {
             factura.setPuntoVenta(buscarObligatorio(PuntoVenta.class, dto.puntoVentaId(), "Punto de venta"));
@@ -99,10 +109,20 @@ public class FacturaService {
         }
         factura.setFechaModificacion(new Date());
 
-        if (dto.detalles() != null) {
-            factura.getDetalles().clear();     // requiere orphanRemoval = true en FacturaVenta.detalles
+        if (editaRenglones) {
+            // La lista NO se puede cambiar al editar: se deduce de los renglones actuales.
+            // Tiene que hacerse ANTES del clear(), porque después ya no quedan renglones de donde leerla.
+            ListaPrecio lista = deducirListaPrecio(factura);
+            if (lista == null) {
+                throw new IllegalArgumentException(
+                        "No se puede determinar la lista de precios de la factura porque no tiene artículos.");
+            }
+            if (dto.detalles().isEmpty()) {
+                throw new IllegalArgumentException("La factura debe tener al menos un artículo.");
+            }
+            factura.getDetalles().clear();     // con orphanRemoval = true (agregado en FacturaVenta) borra los viejos
             for (FacturaDetalleRequestDTO detDto : dto.detalles()) {
-                factura.agregarDetalle(construirDetalle(detDto));
+                factura.agregarDetalle(construirDetalle(detDto, lista));
             }
             factura.calcularImportes();
         }
@@ -119,6 +139,40 @@ public class FacturaService {
         em.remove(factura);
     }
 
+    // ---DATOS PARA LA PANTALLA DE EDICIÓN
+    @Transactional(readOnly = true)
+    public FacturaEdicionDTO obtenerParaEdicion(Long id) {
+        FacturaVenta factura = buscarObligatorio(FacturaVenta.class, id, "Factura");
+
+        // La lista no se guarda en la factura: la deducimos de sus renglones.
+        ListaPrecio lista = deducirListaPrecio(factura);
+
+        List<FacturaItemEdicionDTO> items = factura.getDetalles().stream()
+                .map(d -> new FacturaItemEdicionDTO(
+                        d.getListaPrecioArticulo().getId(),
+                        d.getListaPrecioArticulo().getArticulo().getCodigo(),
+                        d.getListaPrecioArticulo().getArticulo().getDenominacion(),
+                        d.getPrecioUnitario(),
+                        d.getCantidad(),
+                        d.getPorcentajeBonificacion()))
+                .toList();
+
+        Cliente cliente = factura.getCliente();
+        return new FacturaEdicionDTO(
+                factura.getId(),
+                factura.getNumero(),
+                factura.getFechaEmision(),
+                factura.getPuntoVenta().getId(),
+                factura.getPuntoVenta().getDescripcion(),
+                cliente != null ? cliente.getId() : null,
+                cliente != null ? cliente.getDenominacion() : "Consumidor Final",
+                factura.getCondicionIva().getId(),
+                factura.getCondicionIva().getDenominacion(),
+                lista != null ? lista.getId() : null,
+                lista != null ? lista.getCodigo() + " — " + lista.getDenominacion() : null,
+                factura.getEstado(),
+                items);
+    }
 
     @Transactional(readOnly = true)
     public PaginaDTO<FacturaReporteDTO> buscarFacturasFiltradas(Long numero, Long clienteId, Date fechaDesde,
@@ -185,18 +239,40 @@ public class FacturaService {
         return PaginaDTO.de(consultaPagina.getResultList(), pag, tam, total);
     }
 
+    // --- LISTAS DE PRECIOS (para el <select>)
+    @Transactional(readOnly = true)
+    public List<ListaPrecioDTO> listarListasPrecio() {
+        return em.createQuery(
+                "SELECT new com.facturacion.DTO.ListaPrecioDTO(lp.id, lp.codigo, lp.denominacion) " +
+                        "FROM ListaPrecio lp " +
+                        "WHERE lp.fechaBaja IS NULL " +
+                        "ORDER BY lp.denominacion",
+                ListaPrecioDTO.class).getResultList();
+    }
+
     //  CATÁLOGO DE ARTÍCULOS
     @Transactional(readOnly = true)
-    public List<ArticuloPrecioDTO> listarArticulosConPrecio() {
+    public List<ArticuloPrecioDTO> listarArticulosConPrecio(Long listaPrecioId) {
         return em.createQuery(
-                "SELECT new com.facturacion.DTO.ArticuloPrecioDTO(lpa.id, a.codigo, a.denominacion, lpa.precioVenta) " +
-                        "FROM ListaPrecioArticulo lpa JOIN lpa.articulo a " +
-                        "WHERE lpa.fechaBaja IS NULL " +
-                        "ORDER BY a.denominacion",
-                ArticuloPrecioDTO.class).getResultList();
+                        "SELECT new com.facturacion.DTO.ArticuloPrecioDTO(lpa.id, a.codigo, a.denominacion, lpa.precioVenta) " +
+                                "FROM ListaPrecioArticulo lpa JOIN lpa.articulo a " +
+                                "WHERE lpa.fechaBaja IS NULL AND lpa.listaPrecio.id = :listaPrecioId " +
+                                "ORDER BY a.denominacion",
+                        ArticuloPrecioDTO.class)
+                .setParameter("listaPrecioId", listaPrecioId)
+                .getResultList();
     }
 
     // ------ PRIVADOS
+    /**
+     * La factura no guarda su lista de precios: la lista es la de cualquiera de sus renglones
+     * (todos pertenecen a la misma, lo garantiza construirDetalle). Devuelve null si no tiene renglones.
+     */
+    private ListaPrecio deducirListaPrecio(FacturaVenta factura) {
+        if (factura.getDetalles().isEmpty()) return null;
+        return factura.getDetalles().get(0).getListaPrecioArticulo().getListaPrecio();
+    }
+
     /** Busca una entidad por id; si el id es null o no existe lanza EntityNotFoundException (-> 404). */
     private <T> T buscarObligatorio(Class<T> clase, Long id, String nombre) {
         T entidad = (id != null) ? em.find(clase, id) : null;
@@ -206,10 +282,19 @@ public class FacturaService {
         return entidad;
     }
 
-    /** Arma un renglón de factura y calcula neto, IVA y subtotal (antes estaba duplicado en crear y actualizar). */
-    private FacturaVentaDetalle construirDetalle(FacturaDetalleRequestDTO dto) {
+    /**
+     * Arma un renglón de factura y calcula neto, IVA y subtotal.
+     * Recibe la lista de precios de la factura y verifica que el artículo pertenezca a ella.
+     */
+    private FacturaVentaDetalle construirDetalle(FacturaDetalleRequestDTO dto, ListaPrecio listaFactura) {
         // Ojo: dto.articuloId() es el ID de ListaPrecioArticulo (el precio vigente del artículo)
         ListaPrecioArticulo lpa = buscarObligatorio(ListaPrecioArticulo.class, dto.articuloId(), "Artículo con precio");
+
+        // Regla de negocio: no se puede mezclar artículos de otra lista en esta factura
+        if (!lpa.getListaPrecio().getId().equals(listaFactura.getId())) {
+            throw new IllegalArgumentException("El artículo '" + lpa.getArticulo().getDenominacion()
+                    + "' no pertenece a la lista de precios '" + listaFactura.getDenominacion() + "'.");
+        }
 
         // Si no viene la cantidad o la bonificación, usamos un valor por defecto
         double cantidad = dto.cantidad() != null ? dto.cantidad() : 0.0;

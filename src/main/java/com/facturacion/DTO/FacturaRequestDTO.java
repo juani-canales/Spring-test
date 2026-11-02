@@ -8,6 +8,7 @@ public record FacturaRequestDTO(
         Long condicionIvaId,
         Long puntoVentaId,
         Long tipoMonedaId,
+        Long listaPrecioId,          // Solo se usa al CREAR (para validar los artículos); no se guarda
         Double importeCobrado,
         String observaciones,
         String estado,

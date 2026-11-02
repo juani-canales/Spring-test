@@ -1,9 +1,11 @@
 import type {
     ArticuloPrecioDTO,
     EstadoFactura,
+    FacturaEdicionDTO,
     FacturaFiltrosDTO,
     FacturaReporteDTO,
     FacturaRequestDTO,
+    ListaPrecioDTO,
     Pagina
 } from "./models/factura.dto.js";
 import { verificarRespuesta } from "./utils.js";
@@ -72,15 +74,49 @@ export class FacturaService {
         return datos;
     }
 
+    // NUEVO: PUT /api/facturas/{id} con lista de precios + renglones (edición de artículos)
+    async actualizarFactura(
+        id: number,
+        cambios: Partial<FacturaRequestDTO>
+    ): Promise<FacturaReporteDTO> {
+        const respuesta = await fetch(`${API}/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cambios)
+        });
+        await verificarRespuesta(respuesta);
+
+        const datos: FacturaReporteDTO = await respuesta.json();
+        return datos;
+    }
+
+    // NUEVO: GET /api/facturas/{id} -> datos completos para precargar la pantalla de edición
+    async obtenerFacturaParaEdicion(id: number): Promise<FacturaEdicionDTO> {
+        const respuesta = await fetch(`${API}/${id}`);
+        await verificarRespuesta(respuesta);
+
+        const datos: FacturaEdicionDTO = await respuesta.json();
+        return datos;
+    }
+
     // DELETE /api/facturas/{id}  ->  204 No Content (no hay cuerpo, NO se llama a .json())
     async eliminarFactura(id: number): Promise<void> {
         const respuesta = await fetch(`${API}/${id}`, { method: "DELETE" });
         await verificarRespuesta(respuesta);
     }
 
-    // GET /api/facturas/articulos -> catálogo para los renglones del formulario
-    async obtenerArticulos(): Promise<ArticuloPrecioDTO[]> {
-        const respuesta = await fetch(`${API}/articulos`);
+    // NUEVO: GET /api/facturas/listas-precio -> opciones del <select> de lista de precios
+    async obtenerListasPrecio(): Promise<ListaPrecioDTO[]> {
+        const respuesta = await fetch(`${API}/listas-precio`);
+        await verificarRespuesta(respuesta);
+
+        const datos: ListaPrecioDTO[] = await respuesta.json();
+        return datos;
+    }
+
+    // CAMBIÓ: GET /api/facturas/articulos?listaPrecioId=1 -> solo los artículos de ESA lista
+    async obtenerArticulos(listaPrecioId: number): Promise<ArticuloPrecioDTO[]> {
+        const respuesta = await fetch(`${API}/articulos?listaPrecioId=${listaPrecioId}`);
         await verificarRespuesta(respuesta);
 
         const datos: ArticuloPrecioDTO[] = await respuesta.json();

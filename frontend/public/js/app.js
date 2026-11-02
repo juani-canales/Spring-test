@@ -91,6 +91,9 @@ function crearCeldaAcciones(factura) {
     const celda = document.createElement("td");
     celda.className = "acciones-fila";
     if (factura.estado !== "ANULADA") { // una anulada no se puede anular otra vez
+        celda.appendChild(crearBotonAccion("Editar", "btn-secundario", () => {
+            window.location.href = `nueva-factura.html?id=${factura.id}`;
+        }));
         celda.appendChild(crearBotonAccion("Anular", "btn-secundario", () => void anular(factura)));
     }
     celda.appendChild(crearBotonAccion("Eliminar", "btn-peligro", () => void eliminar(factura)));
@@ -161,9 +164,14 @@ formFiltros.addEventListener("reset", () => {
 });
 // ------------------ 9. Arranque
 // Un <script type="module"> se ejecuta cuando el HTML ya está cargado: no hace falta DOMContentLoaded.
-const creada = new URLSearchParams(window.location.search).get("creada");
+const parametros = new URLSearchParams(window.location.search);
+const creada = parametros.get("creada");
+const editada = parametros.get("editada");
 if (creada !== null) {
     mostrarMensaje(`Factura N° ${creada} creada correctamente.`, "exito");
+}
+else if (editada !== null) {
+    mostrarMensaje(`Factura N° ${editada} actualizada correctamente.`, "exito");
 }
 filtrosActuales = leerFiltros(); // al inicio: estado EMITIDA (el valor por defecto del select)
 void cargarFacturas(0);
