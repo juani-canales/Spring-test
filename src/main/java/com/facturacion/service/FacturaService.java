@@ -41,6 +41,7 @@ public class FacturaService {
         CondicionIva condicionIva = buscarObligatorio(CondicionIva.class, dto.condicionIvaId(), "Condición IVA");
         PuntoVenta puntoVenta = buscarObligatorio(PuntoVenta.class, dto.puntoVentaId(), "Punto de venta");
         TipoMoneda tipoMoneda = buscarObligatorio(TipoMoneda.class, dto.tipoMonedaId(), "Tipo de moneda");
+        // NUEVO: la lista es obligatoria al crear. NO se guarda en la factura: solo sirve para validar los renglones.
         ListaPrecio listaPrecio = buscarObligatorio(ListaPrecio.class, dto.listaPrecioId(), "Lista de precios");
 
         FacturaVenta factura = new FacturaVenta();
@@ -76,7 +77,7 @@ public class FacturaService {
     public FacturaReporteDTO actualizar(Long id, FacturaRequestDTO dto) {
         FacturaVenta factura = buscarObligatorio(FacturaVenta.class, id, "Factura");
 
-        // Una factura anulada no admite cambios de artículos
+        // NUEVO: una factura anulada no admite cambios de artículos
         boolean editaRenglones = dto.detalles() != null;
         if (editaRenglones && "ANULADA".equals(factura.getEstado())) {
             throw new IllegalArgumentException("No se pueden modificar los artículos de una factura anulada.");
@@ -120,7 +121,7 @@ public class FacturaService {
             if (dto.detalles().isEmpty()) {
                 throw new IllegalArgumentException("La factura debe tener al menos un artículo.");
             }
-            factura.getDetalles().clear();     // con orphanRemoval = true (agregado en FacturaVenta) borra los viejos
+            factura.getDetalles().clear();     // con orphanRemoval = true (ya agregado en FacturaVenta) borra los viejos
             for (FacturaDetalleRequestDTO detDto : dto.detalles()) {
                 factura.agregarDetalle(construirDetalle(detDto, lista));
             }
@@ -139,7 +140,7 @@ public class FacturaService {
         em.remove(factura);
     }
 
-    // ---DATOS PARA LA PANTALLA DE EDICIÓN
+    // --- DATOS PARA LA PANTALLA DE EDICIÓN
     @Transactional(readOnly = true)
     public FacturaEdicionDTO obtenerParaEdicion(Long id) {
         FacturaVenta factura = buscarObligatorio(FacturaVenta.class, id, "Factura");
@@ -175,7 +176,7 @@ public class FacturaService {
     }
 
     @Transactional(readOnly = true)
-    public PaginaDTO<FacturaReporteDTO> buscarFacturasFiltradas(Long numero, Long clienteId, Date fechaDesde,
+    public PaginaDTO<FacturaReporteDTO> buscarFacturasFiltradas(Long numero, Long clienteId, Long condicionIvaId, Date fechaDesde,
                                                                 Date fechaHasta, String estado, Double montoMinimo,
                                                                 int pagina, int tamanio) {
         // Protegemos al backend de valores raros (página negativa, tamanio = 100000...)
@@ -197,6 +198,10 @@ public class FacturaService {
         if (clienteId != null) {
             where.append("AND c.id = :clienteId ");
             params.put("clienteId", clienteId);
+        }
+        if (condicionIvaId != null) {
+            where.append("AND ci.id = :condicionIvaId ");
+            params.put("condicionIvaId", condicionIvaId);
         }
         if (fechaDesde != null) {
             where.append("AND f.fechaEmision >= :fechaDesde ");
@@ -239,7 +244,7 @@ public class FacturaService {
         return PaginaDTO.de(consultaPagina.getResultList(), pag, tam, total);
     }
 
-    // --- LISTAS DE PRECIOS (para el <select>)
+    // ---LISTAS DE PRECIOS (para el <select>)
     @Transactional(readOnly = true)
     public List<ListaPrecioDTO> listarListasPrecio() {
         return em.createQuery(
@@ -250,7 +255,28 @@ public class FacturaService {
                 ListaPrecioDTO.class).getResultList();
     }
 
-    //  CATÁLOGO DE ARTÍCULOS
+    // ---PUNTOS DE VENTA y CONDICIONES IVA (para los <select>)
+    @Transactional(readOnly = true)
+    public List<PuntoVentaDTO> listarPuntosVenta() {
+        return em.createQuery(
+                "SELECT new com.facturacion.DTO.PuntoVentaDTO(pv.id, pv.numero, pv.descripcion) " +
+                        "FROM PuntoVenta pv " +
+                        "WHERE pv.fechaBaja IS NULL " +
+                        "ORDER BY pv.numero",
+                PuntoVentaDTO.class).getResultList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CondicionIvaDTO> listarCondicionesIva() {
+        return em.createQuery(
+                "SELECT new com.facturacion.DTO.CondicionIvaDTO(ci.id, ci.denominacion) " +
+                        "FROM CondicionIva ci " +
+                        "WHERE ci.fechaBaja IS NULL " +
+                        "ORDER BY ci.denominacion",
+                CondicionIvaDTO.class).getResultList();
+    }
+
+    //  CATÁLOGO DE ARTÍCULOS (CAMBIÓ: ahora filtra por la lista de precios elegida)
     @Transactional(readOnly = true)
     public List<ArticuloPrecioDTO> listarArticulosConPrecio(Long listaPrecioId) {
         return em.createQuery(

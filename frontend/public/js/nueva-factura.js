@@ -133,15 +133,26 @@ function renderizarTabla() {
     }
     actualizarResumen();
 }
-// -------- Lista de precios
-async function cargarListasPrecio() {
-    const listas = await servicio.obtenerListasPrecio();
-    for (const lista of listas) {
-        const opcion = document.createElement("option");
-        opcion.value = String(lista.id);
-        opcion.textContent = `${lista.codigo} — ${lista.denominacion}`;
-        selectListaPrecio.appendChild(opcion);
-    }
+// -------- Opciones de los <select> (vienen de la base de datos)
+function agregarOpcion(select, valor, texto) {
+    const opcion = document.createElement("option");
+    opcion.value = String(valor);
+    opcion.textContent = texto;
+    select.appendChild(opcion);
+}
+async function cargarSelects() {
+    // Las tres consultas son independientes: las lanzamos juntas y esperamos a que terminen todas.
+    const [puntosVenta, condiciones, listas] = await Promise.all([
+        servicio.obtenerPuntosVenta(),
+        servicio.obtenerCondicionesIva(),
+        servicio.obtenerListasPrecio()
+    ]);
+    for (const pv of puntosVenta)
+        agregarOpcion(selectPuntoVenta, pv.id, `${pv.descripcion} — N.º ${pv.numero}`);
+    for (const ci of condiciones)
+        agregarOpcion(selectCondicionIva, ci.id, ci.denominacion);
+    for (const lp of listas)
+        agregarOpcion(selectListaPrecio, lp.id, `${lp.codigo} — ${lp.denominacion}`);
 }
 /**
  * Se ejecuta cada vez que el usuario cambia la lista de precios.
@@ -391,8 +402,14 @@ async function iniciar() {
     botonGuardar.textContent = textoBotonGuardar;
     botonAgregar.disabled = true;
     inputFecha.value = fechaDeHoy(); // en alta: la fecha real la fija el servidor; acá solo se muestra
+    // En edición cambiamos el título YA, sin esperar al servidor (después se le agrega el número).
+    if (modoEdicion) {
+        document.title = "Editar Factura | Sistema de Facturación";
+        titulo.textContent = "Editar Factura";
+        subtitulo.textContent = "Cargando los datos de la factura...";
+    }
     try {
-        await cargarListasPrecio(); // primero las opciones del <select>...
+        await cargarSelects(); // primero las opciones de los <select>...
         if (facturaId !== null) {
             await cargarFacturaParaEditar(facturaId); // ...después seleccionamos la de la factura
         }

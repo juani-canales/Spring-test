@@ -12,6 +12,8 @@ export class FacturaService {
             params.set("numero", String(filtros.numero));
         if (filtros.clienteId !== undefined)
             params.set("clienteId", String(filtros.clienteId));
+        if (filtros.condicionIvaId !== undefined)
+            params.set("condicionIvaId", String(filtros.condicionIvaId));
         if (filtros.fechaDesde)
             params.set("fechaDesde", filtros.fechaDesde);
         if (filtros.fechaHasta)
@@ -75,6 +77,20 @@ export class FacturaService {
     // NUEVO: GET /api/facturas/listas-precio -> opciones del <select> de lista de precios
     async obtenerListasPrecio() {
         const respuesta = await fetch(`${API}/listas-precio`);
+        await verificarRespuesta(respuesta);
+        const datos = await respuesta.json();
+        return datos;
+    }
+    // NUEVO: GET /api/facturas/puntos-venta -> opciones del <select> de punto de venta
+    async obtenerPuntosVenta() {
+        const respuesta = await fetch(`${API}/puntos-venta`);
+        await verificarRespuesta(respuesta);
+        const datos = await respuesta.json();
+        return datos;
+    }
+    // NUEVO: GET /api/facturas/condiciones-iva -> opciones del <select> de condición IVA
+    async obtenerCondicionesIva() {
+        const respuesta = await fetch(`${API}/condiciones-iva`);
         await verificarRespuesta(respuesta);
         const datos = await respuesta.json();
         return datos;

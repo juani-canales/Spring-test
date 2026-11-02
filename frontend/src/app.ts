@@ -20,6 +20,7 @@ const inputCliente = obtener<HTMLInputElement>("#cliente");
 const inputClienteId = obtener<HTMLInputElement>("#clienteId");
 const botonBuscar = obtener<HTMLButtonElement>("#btnBuscar");
 const cajaMensaje = obtener<HTMLElement>("#mensajeGlobal");
+const selectCondicionIva = obtener<HTMLSelectElement>("#condicionIva");
 
 // ----------- 2. Estado en memoria
 // Guardamos los filtros de la ÚLTIMA búsqueda para que al cambiar de página
@@ -48,7 +49,24 @@ function leerFiltros(): FacturaFiltrosDTO {
     const estado = leerTexto(datos, "filtroEstado");
     if (estado === "EMITIDA" || estado === "ANULADA") filtros.estado = estado;
 
+    const condicionIva = leerTexto(datos, "condicionIva");
+    if (condicionIva !== "") filtros.condicionIvaId = Number(condicionIva);
+
     return filtros;
+}
+
+async function cargarCondicionesIva(): Promise<void> {
+    try {
+        const condiciones = await servicio.obtenerCondicionesIva();
+        for (const ci of condiciones) {
+            const opcion = document.createElement("option");
+            opcion.value = String(ci.id);
+            opcion.textContent = ci.denominacion;
+            selectCondicionIva.appendChild(opcion);
+        }
+    } catch (error) {
+        mostrarMensaje(mensajeDeError(error), "error");
+    }
 }
 
 // ------------------ 4. Listado + paginación
@@ -123,10 +141,10 @@ function crearCeldaAcciones(factura: FacturaReporteDTO): HTMLTableCellElement {
     celda.className = "acciones-fila";
 
     if (factura.estado !== "ANULADA") {                           // una anulada no se puede anular otra vez
-        celda.appendChild(crearBotonAccion("Editar", "btn-secundario", () => {
+        celda.appendChild(crearBotonAccion("Editar", "btn-editor", () => {
             window.location.href = `nueva-factura.html?id=${factura.id}`;
         }));
-        celda.appendChild(crearBotonAccion("Anular", "btn-secundario", () => void anular(factura)));
+        celda.appendChild(crearBotonAccion("Anular", "btn-anulado", () => void anular(factura)));
     }
     celda.appendChild(crearBotonAccion("Eliminar", "btn-peligro", () => void eliminar(factura)));
     return celda;
@@ -212,4 +230,5 @@ if (creada !== null) {
 }
 
 filtrosActuales = leerFiltros();       // al inicio: estado EMITIDA (el valor por defecto del select)
+void cargarCondicionesIva();
 void cargarFacturas(0);

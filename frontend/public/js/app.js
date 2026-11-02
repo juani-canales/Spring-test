@@ -13,6 +13,7 @@ const inputCliente = obtener("#cliente");
 const inputClienteId = obtener("#clienteId");
 const botonBuscar = obtener("#btnBuscar");
 const cajaMensaje = obtener("#mensajeGlobal");
+const selectCondicionIva = obtener("#condicionIva");
 // ----------- 2. Estado en memoria
 // Guardamos los filtros de la ÚLTIMA búsqueda para que al cambiar de página
 // se sigan aplicando (aunque el usuario haya tocado el formulario sin buscar).
@@ -38,7 +39,24 @@ function leerFiltros() {
     const estado = leerTexto(datos, "filtroEstado");
     if (estado === "EMITIDA" || estado === "ANULADA")
         filtros.estado = estado;
+    const condicionIva = leerTexto(datos, "condicionIva");
+    if (condicionIva !== "")
+        filtros.condicionIvaId = Number(condicionIva);
     return filtros;
+}
+async function cargarCondicionesIva() {
+    try {
+        const condiciones = await servicio.obtenerCondicionesIva();
+        for (const ci of condiciones) {
+            const opcion = document.createElement("option");
+            opcion.value = String(ci.id);
+            opcion.textContent = ci.denominacion;
+            selectCondicionIva.appendChild(opcion);
+        }
+    }
+    catch (error) {
+        mostrarMensaje(mensajeDeError(error), "error");
+    }
 }
 // ------------------ 4. Listado + paginación
 async function cargarFacturas(pagina) {
@@ -91,10 +109,10 @@ function crearCeldaAcciones(factura) {
     const celda = document.createElement("td");
     celda.className = "acciones-fila";
     if (factura.estado !== "ANULADA") { // una anulada no se puede anular otra vez
-        celda.appendChild(crearBotonAccion("Editar", "btn-secundario", () => {
+        celda.appendChild(crearBotonAccion("Editar", "btn-editor", () => {
             window.location.href = `nueva-factura.html?id=${factura.id}`;
         }));
-        celda.appendChild(crearBotonAccion("Anular", "btn-secundario", () => void anular(factura)));
+        celda.appendChild(crearBotonAccion("Anular", "btn-anulado", () => void anular(factura)));
     }
     celda.appendChild(crearBotonAccion("Eliminar", "btn-peligro", () => void eliminar(factura)));
     return celda;
@@ -174,4 +192,5 @@ else if (editada !== null) {
     mostrarMensaje(`Factura N° ${editada} actualizada correctamente.`, "exito");
 }
 filtrosActuales = leerFiltros(); // al inicio: estado EMITIDA (el valor por defecto del select)
+void cargarCondicionesIva();
 void cargarFacturas(0);

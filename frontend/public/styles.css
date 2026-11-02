@@ -68,7 +68,7 @@ input:focus, select:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(59
 input:disabled, select:disabled, button:disabled { opacity: .6; cursor: not-allowed; }
 
 .acciones-filtros { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: .7rem; margin-top: 1.25rem; }
-.btn-primario, .btn-secundario, .paginacion button, .btn-peligro {
+.btn-primario, .btn-secundario, .paginacion button, .btn-peligro, .btn-editor, .btn-anulado {
     display: inline-flex; align-items: center; justify-content: center; min-height: 40px;
     padding: .6rem 1rem; border: 1px solid transparent; border-radius: 9px;
     font-weight: 700; text-decoration: none; cursor: pointer;
@@ -76,9 +76,9 @@ input:disabled, select:disabled, button:disabled { opacity: .6; cursor: not-allo
 }
 .btn-primario { color: #fff; background: var(--primario); }
 .btn-primario:hover { background: var(--primario-hover); }
-.btn-secundario, .paginacion button { color: #334155; background: #fff; border-color: #cbd5e1; }
+.btn-secundario ,.paginacion button { color: #334155; background: #fff; border-color: #cbd5e1; }
 .btn-secundario:hover, .paginacion button:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
-.btn-primario:active, .btn-secundario:active, .btn-peligro:active { transform: translateY(1px); }
+.btn-primario:active, .btn-secundario:active, .btn-peligro:active, .btn-editor:active, .btn-anulado:active { transform: translateY(1px); }
 
 .cabecera-tabla { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: .75rem; }
 .cabecera-tabla .descripcion { margin-bottom: .25rem; }
@@ -169,4 +169,23 @@ tbody tr:hover { background: #f8fbff; }
 }
 .btn-peligro:hover {
     background-color: #ffe4e6;
+}
+
+.btn-anulado {
+    background-color: #FFEEB8;
+    color: #755A00;
+    border-color: #755A00;
+}
+
+.btn-anulado:hover {
+    background-color: #FFD95C;
+}
+
+.btn-editor {
+    background-color: #DFFFB8;
+    color: #607500;
+    border-color: #607500;
+}
+.btn-editor:hover {
+    background-color: #BCFFB8;
 }

@@ -24,6 +24,7 @@ public class FacturaRestController {
     @GetMapping
     public PaginaDTO<FacturaReporteDTO> listar (@RequestParam(required = false) Long numero,
                                                 @RequestParam(required = false) Long clienteId,
+                                                @RequestParam(required = false) Long condicionIvaId,
                                                 @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaDesde,
                                                 @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaHasta,
                                                 @RequestParam(required = false) String estado,
@@ -31,7 +32,7 @@ public class FacturaRestController {
                                                 @RequestParam(defaultValue = "0") int pagina,
                                                 @RequestParam(defaultValue = "5") int tamanio){
 
-        return service.buscarFacturasFiltradas(numero, clienteId, fechaDesde, fechaHasta, estado, montoMinimo, pagina, tamanio);
+        return service.buscarFacturasFiltradas(numero, clienteId, condicionIvaId, fechaDesde, fechaHasta, estado, montoMinimo, pagina, tamanio);
     }
 
     // NUEVO: GET /api/facturas/listas-precio -> para llenar el <select> de lista de precios
@@ -40,13 +41,24 @@ public class FacturaRestController {
         return service.listarListasPrecio();
     }
 
-    // GET /api/facturas/articulos -> catálogo para el formulario de alta
+    // NUEVO: GET /api/facturas/puntos-venta y /condiciones-iva -> para llenar sus <select>
+    @GetMapping("/puntos-venta")
+    public List<PuntoVentaDTO> puntosVenta() {
+        return service.listarPuntosVenta();
+    }
+
+    @GetMapping("/condiciones-iva")
+    public List<CondicionIvaDTO> condicionesIva() {
+        return service.listarCondicionesIva();
+    }
+
+    // CAMBIÓ: ahora el catálogo se pide POR LISTA -> GET /api/facturas/articulos?listaPrecioId=1
     @GetMapping("/articulos")
     public List<ArticuloPrecioDTO> articulos(@RequestParam Long listaPrecioId) {
         return service.listarArticulosConPrecio(listaPrecioId);
     }
 
-    // GET /api/facturas/{id} -> datos completos para precargar la pantalla de edición
+    // NUEVO: GET /api/facturas/{id} -> datos completos para precargar la pantalla de edición
     // (Spring prefiere las rutas "literales" como /articulos antes que /{id}, no hay conflicto)
     @GetMapping("/{id}")
     public FacturaEdicionDTO obtener(@PathVariable Long id) {
@@ -72,7 +84,7 @@ public class FacturaRestController {
         return ResponseEntity.noContent().build();//204
     }
 
-    // Un único lugar que convierte "no existe" en 404 con un mensaje legible para el frontend.
+    // "No existe" -> 404 con un mensaje legible para el frontend.
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<Map<String, String>> manejarNoEncontrado(EntityNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("mensaje", e.getMessage()));

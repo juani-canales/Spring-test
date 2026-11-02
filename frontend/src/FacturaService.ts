@@ -1,12 +1,14 @@
 import type {
     ArticuloPrecioDTO,
+    CondicionIvaDTO,
     EstadoFactura,
     FacturaEdicionDTO,
     FacturaFiltrosDTO,
     FacturaReporteDTO,
     FacturaRequestDTO,
     ListaPrecioDTO,
-    Pagina
+    Pagina,
+    PuntoVentaDTO
 } from "./models/factura.dto.js";
 import { verificarRespuesta } from "./utils.js";
 
@@ -29,6 +31,7 @@ export class FacturaService {
         // Solo mandamos los filtros que el usuario realmente completó.
         if (filtros.numero !== undefined) params.set("numero", String(filtros.numero));
         if (filtros.clienteId !== undefined) params.set("clienteId", String(filtros.clienteId));
+        if (filtros.condicionIvaId !== undefined) params.set("condicionIvaId", String(filtros.condicionIvaId));
         if (filtros.fechaDesde) params.set("fechaDesde", filtros.fechaDesde);
         if (filtros.fechaHasta) params.set("fechaHasta", filtros.fechaHasta);
         if (filtros.estado) params.set("estado", filtros.estado);
@@ -111,6 +114,24 @@ export class FacturaService {
         await verificarRespuesta(respuesta);
 
         const datos: ListaPrecioDTO[] = await respuesta.json();
+        return datos;
+    }
+
+    // NUEVO: GET /api/facturas/puntos-venta -> opciones del <select> de punto de venta
+    async obtenerPuntosVenta(): Promise<PuntoVentaDTO[]> {
+        const respuesta = await fetch(`${API}/puntos-venta`);
+        await verificarRespuesta(respuesta);
+
+        const datos: PuntoVentaDTO[] = await respuesta.json();
+        return datos;
+    }
+
+    // NUEVO: GET /api/facturas/condiciones-iva -> opciones del <select> de condición IVA
+    async obtenerCondicionesIva(): Promise<CondicionIvaDTO[]> {
+        const respuesta = await fetch(`${API}/condiciones-iva`);
+        await verificarRespuesta(respuesta);
+
+        const datos: CondicionIvaDTO[] = await respuesta.json();
         return datos;
     }
 

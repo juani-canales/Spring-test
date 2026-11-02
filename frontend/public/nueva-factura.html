@@ -24,8 +24,9 @@
         <section class="titulo-pagina">
             <div>
                 <a href="index.html" class="enlace-volver">← Volver al listado</a>
-                <h2>Nueva Factura</h2>
-                <p>Completá los datos para registrar una factura de venta.</p>
+                <!-- NUEVO: ids para que nueva-factura.ts cambie estos textos en modo edición -->
+                <h2 id="tituloPagina">Nueva Factura</h2>
+                <p id="subtituloPagina">Completá los datos para registrar una factura de venta.</p>
             </div>
         </section>
 
@@ -55,7 +56,6 @@
                         <label for="puntoVentaId">Punto de venta</label>
                         <select id="puntoVentaId" name="puntoVentaId" required>
                             <option value="">Seleccionar punto de venta</option>
-                            <option value="1">Casa Central — N.º 1</option>
                         </select>
                     </div>
 
@@ -75,11 +75,10 @@
                         <label for="condicionIvaId">Condición IVA</label>
                         <select id="condicionIvaId" name="condicionIvaId" required>
                             <option value="">Seleccionar condición IVA</option>
-                            <option value="1">Consumidor Final</option>
                         </select>
                     </div>
 
-                    <!-- Lista de precios. Las opciones las carga nueva-factura.ts desde el backend.
+                    <!-- NUEVO: lista de precios. Las opciones las carga nueva-factura.ts desde el backend.
                          Al elegirla se cargan los artículos disponibles para los renglones. -->
                     <div class="campo">
                         <label for="listaPrecioId">Lista de precios</label>
@@ -125,7 +124,7 @@
                         </thead>
                         <tbody id="tablaDetalles">
                         <tr>
-                            <td colspan="6" class="sin-datos">Todavía no agregaste productos.</td>
+                            <td colspan="6" class="sin-datos">Elegí una lista de precios para poder agregar productos.</td>
                         </tr>
                         </tbody>
                     </table>
