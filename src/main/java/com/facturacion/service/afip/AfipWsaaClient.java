@@ -67,7 +67,7 @@ public class AfipWsaaClient {
 
             String soapEnvelope = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                     "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" " +
-                    "xmlns:nso=\"http://wsaa.afip.gov.ar/ws/services/LoginCms\">" +
+                    "xmlns:nso=\"http://wsaahomo.afip.gov.ar/ws/services/LoginCms\">" +
                     "<soapenv:Header/><soapenv:Body><nso:loginCms><nso:in0>" + cmsBase64 +
                     "</nso:in0></nso:loginCms></soapenv:Body></soapenv:Envelope>";
 
@@ -86,7 +86,7 @@ public class AfipWsaaClient {
         // Lógica estándar para leer archivo .key PEM
         String content = new String(Files.readAllBytes(new File(path).toPath()));
         content = content.replace("-----BEGIN PRIVATE KEY-----", "")
-                .replace("-----END PRIVATE KEY-----", "").replaceAll("\s", "");
+                .replace("-----END PRIVATE KEY-----", "").replaceAll("\\s", "");
         byte[] keyBytes = Base64.getDecoder().decode(content);
         return KeyFactory.getInstance("RSA").generatePrivate(new
                 java.security.spec.PKCS8EncodedKeySpec(keyBytes));
