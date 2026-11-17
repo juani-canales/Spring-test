@@ -17,6 +17,7 @@ import java.security.*;
 import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 public class AfipWsaaClient {
@@ -32,7 +33,7 @@ public class AfipWsaaClient {
 
             PrivateKey privateKey = cargarClavePrivada(keyPath);
             X509Certificate cert = cargarCertificado(certPath);
-            ZonedDateTime now = ZonedDateTime.now();
+            ZonedDateTime now = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
 
             String genTime =
                     now.minusMinutes(5).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
@@ -67,7 +68,7 @@ public class AfipWsaaClient {
 
             String soapEnvelope = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                     "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" " +
-                    "xmlns:nso=\"http://wsaahomo.afip.gov.ar/ws/services/LoginCms\">" +
+                    "xmlns:nso=\"http://wsaa.view.sua.dvadac.desein.afip.gov\">" +
                     "<soapenv:Header/><soapenv:Body><nso:loginCms><nso:in0>" + cmsBase64 +
                     "</nso:in0></nso:loginCms></soapenv:Body></soapenv:Envelope>";
 
@@ -104,17 +105,30 @@ public class AfipWsaaClient {
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "text/xml; charset=utf-8");
+        conn.setRequestProperty("SOAPAction", "\"\"");   // WSAA espera este encabezado (vacío)
         conn.setDoOutput(true);
 
         try (OutputStream os = conn.getOutputStream()) {
             os.write(soapXml.getBytes(StandardCharsets.UTF_8));
         }
-        try (BufferedReader br = new BufferedReader(new
-                InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = br.readLine()) != null) sb.append(line);
-            return sb.toString();
+
+        int codigo = conn.getResponseCode();
+        // Si fue exitoso se lee el flujo normal; si no, el flujo de error (donde viene el Fault)
+        InputStream flujo = (codigo >= 200 && codigo < 300) ? conn.getInputStream() : conn.getErrorStream();
+
+        String cuerpo = "";
+        if (flujo != null) {
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(flujo, StandardCharsets.UTF_8))) {
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+                cuerpo = sb.toString();
+            }
         }
+
+        if (codigo < 200 || codigo >= 300) {
+            throw new IOException("ARCA respondió HTTP " + codigo + ": " + cuerpo);
+        }
+        return cuerpo;
     }
 }

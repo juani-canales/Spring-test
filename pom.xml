@@ -161,6 +161,7 @@
 					</execution>
 				</executions>
 			</plugin>
+			<!--
 			<plugin>
 				<groupId>com.sun.xml.ws</groupId>
 				<artifactId>jaxws-maven-plugin</artifactId>
@@ -174,14 +175,13 @@
 				</executions>
 				<configuration>
 					<wsdlUrls>
-						<!-- Endpoint de homologación -->
 						<wsdlUrl>https://wswhomo.afip.gov.ar/wsfev1/service.asmx?WSDL</wsdlUrl>
 					</wsdlUrls>
 					<packageName>com.afip.wsfe</packageName>
-					<!-- Genera las clases directamente en el código fuente -->
 					<sourceDestDir>${project.basedir}/src/main/java</sourceDestDir>
 				</configuration>
 			</plugin>
+			-->
 		</plugins>
 	</build>
 
