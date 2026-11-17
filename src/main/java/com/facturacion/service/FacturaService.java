@@ -2,10 +2,12 @@ package com.facturacion.service;
 
 import com.facturacion.DTO.*;
 import com.facturacion.entities.*;
+import com.facturacion.service.afip.AfipFacturacionService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,9 @@ import java.util.Map;
 public class FacturaService {
 
     private static final double ALICUOTA_IVA = 0.21;
+
+    @Autowired
+    private AfipFacturacionService afip;
 
     @PersistenceContext
     EntityManager em;
@@ -66,6 +71,7 @@ public class FacturaService {
         }
 
         factura.calcularImportes();
+        afip.autorizar(factura);     // <-- NUEVO: pide el CAE antes de guardar
         em.persist(factura);   // CascadeType.ALL persiste también los detalles
         em.flush();
 

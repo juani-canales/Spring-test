@@ -80,7 +80,12 @@ public class AfipWsaaClient {
                     xmlLimpio.indexOf("</token>"));
             String sign = xmlLimpio.substring(xmlLimpio.indexOf("<sign>") + 6,
                     xmlLimpio.indexOf("</sign>"));
-            return new String[]{token, sign};
+
+            String exp = xmlLimpio.substring(xmlLimpio.indexOf("<expirationTime>") + 16,
+                    xmlLimpio.indexOf("</expirationTime>"));
+            String vence = java.time.OffsetDateTime.parse(exp).toInstant().toString();
+
+            return new String[]{token, sign, vence};   // ahora devuelve 3 datos
         }
 
     private static PrivateKey cargarClavePrivada(String path) throws Exception {
@@ -130,5 +135,26 @@ public class AfipWsaaClient {
             throw new IOException("ARCA respondió HTTP " + codigo + ": " + cuerpo);
         }
         return cuerpo;
+    }
+
+    public static String[] obtenerTokenYSignConCache(String keyPath, String certPath,
+                                                     String archivoCache) throws Exception {
+        java.nio.file.Path ruta = java.nio.file.Path.of(archivoCache);
+
+        // 1) ¿Hay un pase guardado que todavía sirve?
+        if (Files.exists(ruta)) {
+            List<String> lineas = Files.readAllLines(ruta);
+            if (lineas.size() >= 3) {
+                java.time.Instant vence = java.time.Instant.parse(lineas.get(2));
+                if (java.time.Instant.now().isBefore(vence.minusSeconds(300))) {  // 5 min de margen
+                    return new String[]{lineas.get(0), lineas.get(1)};
+                }
+            }
+        }
+
+        // 2) No hay (o venció): pedimos uno nuevo y lo guardamos
+        String[] ts = obtenerTokenYSign(keyPath, certPath);
+        Files.write(ruta, List.of(ts[0], ts[1], ts[2]));
+        return new String[]{ts[0], ts[1]};
     }
 }
