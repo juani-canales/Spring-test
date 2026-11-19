@@ -23,7 +23,6 @@ export interface FacturaDetalleRequestDTO {
 }
 
 export interface FacturaRequestDTO {
-    numero?: number;
     clienteId?: number;
     condicionIvaId: number;
     puntoVentaId: number;

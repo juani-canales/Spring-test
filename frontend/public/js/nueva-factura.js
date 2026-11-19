@@ -5,20 +5,19 @@ import { FacturaService } from "./FacturaService.js";
 import { SelectorCliente } from "./SelectorCliente.js";
 import { fechaDeHoy, formatearMoneda, leerTexto, mensajeDeError, obtener } from "./utils.js";
 const ALICUOTA_IVA = 0.21; // el backend usa el mismo 21%: acá es solo una vista previa
-// ---------------------------------------------------------------- Modo (alta o edición)
+// ----- Modo (alta o edición)
 // Si la URL trae ?id=12 estamos editando; si no, estamos creando.
 const idParam = new URLSearchParams(window.location.search).get("id");
 const facturaId = idParam !== null ? Number(idParam) : null;
 const modoEdicion = facturaId !== null;
 const textoBotonGuardar = modoEdicion ? "Guardar cambios" : "Guardar factura";
-// ---------------------------------------------------------------- Elementos DOM
+// ---- Elementos DOM
 const servicio = new FacturaService();
 const selectorCliente = new SelectorCliente();
 const formulario = obtener("#formNuevaFactura");
 const titulo = obtener("#tituloPagina");
 const subtitulo = obtener("#subtituloPagina");
 const cajaValidacion = obtener("#mensajeValidacion");
-const inputNumero = obtener("#numeroFactura");
 const inputFecha = obtener("#fechaEmision");
 const selectPuntoVenta = obtener("#puntoVentaId");
 const inputCliente = obtener("#buscarCliente");
@@ -204,10 +203,6 @@ function validar() {
     // En EDICIÓN estos campos (incluida la lista de precios) están deshabilitados: FormData los ignora
     // y además no se pueden cambiar, así que solo los validamos al crear.
     if (!modoEdicion) {
-        const numero = Number(leerTexto(datos, "numeroFactura"));
-        if (!Number.isInteger(numero) || numero < 1) {
-            errores.push("Ingresá un número de factura válido (entero mayor a 0).");
-        }
         if (leerTexto(datos, "puntoVentaId") === "")
             errores.push("Seleccioná un punto de venta.");
         if (leerTexto(datos, "condicionIvaId") === "")
@@ -259,7 +254,6 @@ function construirRequestAlta() {
     const datos = new FormData(formulario);
     const clienteId = leerTexto(datos, "clienteId");
     return {
-        numero: Number(leerTexto(datos, "numeroFactura")),
         clienteId: clienteId !== "" ? Number(clienteId) : undefined, // sin cliente = Consumidor Final
         condicionIvaId: Number(leerTexto(datos, "condicionIvaId")),
         puntoVentaId: Number(leerTexto(datos, "puntoVentaId")),
@@ -362,13 +356,11 @@ async function cargarFacturaParaEditar(id) {
     titulo.textContent = `Editar Factura N° ${factura.numero}`;
     subtitulo.textContent = "Podés agregar o quitar productos de la factura. La lista de precios no se puede cambiar.";
     // Campos que solo se MUESTRAN: los cargamos y los deshabilitamos
-    inputNumero.value = String(factura.numero);
     inputFecha.value = factura.fechaEmision.substring(0, 10); // "2026-10-31T00:00..." -> "2026-10-31"
     fijarSelect(selectPuntoVenta, factura.puntoVentaId, factura.puntoVentaDescripcion);
     fijarSelect(selectCondicionIva, factura.condicionIvaId, factura.condicionIvaDenominacion);
     inputCliente.value = factura.clienteDenominacion;
     inputClienteId.value = factura.clienteId !== null ? String(factura.clienteId) : "";
-    inputNumero.disabled = true;
     inputFecha.disabled = true;
     selectPuntoVenta.disabled = true;
     selectCondicionIva.disabled = true;

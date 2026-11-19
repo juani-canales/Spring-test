@@ -50,7 +50,6 @@ public class FacturaService {
         ListaPrecio listaPrecio = buscarObligatorio(ListaPrecio.class, dto.listaPrecioId(), "Lista de precios");
 
         FacturaVenta factura = new FacturaVenta();
-        factura.setNumero(dto.numero());
         factura.setFechaEmision(new Date());          // la fecha de emisión la fija el servidor
         factura.setPuntoVenta(puntoVenta);
         factura.setCliente(cliente);
@@ -103,7 +102,6 @@ public class FacturaService {
         }
 
         // Solo tocamos lo que viene en el DTO (así el front puede mandar un PUT parcial)
-        if (dto.numero() != null) factura.setNumero(dto.numero());
         if (dto.importeCobrado() != null) factura.setImporteCobrado(dto.importeCobrado());
         if (dto.observaciones() != null) factura.setObservaciones(dto.observaciones());
 
