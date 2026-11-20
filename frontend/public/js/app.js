@@ -61,7 +61,7 @@ async function cargarCondicionesIva() {
 // ------------------ 4. Listado + paginación
 async function cargarFacturas(pagina) {
     botonBuscar.disabled = true; // estado "loading" (Clase 5)
-    cuerpoTabla.innerHTML = `<tr><td colspan="7" class="sin-datos">Cargando facturas...</td></tr>`;
+    cuerpoTabla.innerHTML = `<tr><td colspan="9" class="sin-datos">Cargando facturas...</td></tr>`;
     try {
         const resultado = await servicio.obtenerFacturas(filtrosActuales, pagina, TAMANIO_PAGINA);
         // Si borramos el último elemento de la última página, esa página quedó vacía: retrocedemos una.
@@ -74,7 +74,7 @@ async function cargarFacturas(pagina) {
         renderizarPaginacion(contenedorPaginacion, resultado.pagina, resultado.totalPaginas, resultado.totalElementos, (nuevaPagina) => void cargarFacturas(nuevaPagina));
     }
     catch (error) {
-        cuerpoTabla.innerHTML = `<tr><td colspan="7" class="sin-datos">No se pudieron cargar las facturas.</td></tr>`;
+        cuerpoTabla.innerHTML = `<tr><td colspan="9" class="sin-datos">No se pudieron cargar las facturas.</td></tr>`;
         contenedorPaginacion.innerHTML = "";
         mostrarMensaje(mensajeDeError(error), "error"); // estado "error"
     }
@@ -85,7 +85,7 @@ async function cargarFacturas(pagina) {
 function dibujarTabla(facturas) {
     cuerpoTabla.innerHTML = ""; // limpiamos para no duplicar filas
     if (facturas.length === 0) {
-        cuerpoTabla.innerHTML = `<tr><td colspan="7" class="sin-datos">No se encontraron facturas con esos filtros.</td></tr>`;
+        cuerpoTabla.innerHTML = `<tr><td colspan="9" class="sin-datos">No se encontraron facturas con esos filtros.</td></tr>`;
         return;
     }
     for (const factura of facturas) {
@@ -94,7 +94,9 @@ function dibujarTabla(facturas) {
 }
 function crearFila(factura) {
     const fila = document.createElement("tr");
-    fila.append(crearCelda(String(factura.numeroFactura)), crearCelda(formatearFecha(factura.fechaEmision)), crearCelda(factura.clienteDenominacion), crearCelda(factura.condicionIva), crearCelda(formatearMoneda(factura.importeTotal)), crearCelda(factura.estado, `estado-${factura.estado.toLowerCase()}`), crearCeldaAcciones(factura));
+    fila.append(crearCelda(String(factura.numeroFactura)), crearCelda(formatearFecha(factura.fechaEmision)), crearCelda(factura.clienteDenominacion), crearCelda(factura.condicionIva), crearCelda(formatearMoneda(factura.importeTotal)), crearCelda(factura.estado, `estado-${factura.estado.toLowerCase()}`), crearCelda(factura.cae || "-"), crearCelda(factura.caeFechaVencimiento
+        ? formatearFecha(factura.caeFechaVencimiento)
+        : "-"), crearCeldaAcciones(factura));
     return fila;
 }
 function crearBotonAccion(texto, clase, alHacerClic) {
