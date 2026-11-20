@@ -50,8 +50,11 @@ public class AfipFacturacionService {
             int docTipo = 99;      // Consumidor Final
             long docNro = 0;
             if (factura.getCliente() != null) {
-                docTipo = 80;      // CUIT
-                docNro = Long.parseLong(factura.getCliente().getCuitCuil().replaceAll("\\D", ""));
+                String digitos = factura.getCliente().getCuitCuil().replaceAll("\\D", "");
+                if (!digitos.isEmpty() && Long.parseLong(digitos) != 0) {
+                    docTipo = 80;      // CUIT/CUIL real
+                    docNro = Long.parseLong(digitos);
+                }
             }
 
             String fecha = new SimpleDateFormat("yyyyMMdd").format(factura.getFechaEmision());
