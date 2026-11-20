@@ -3,6 +3,7 @@
 //   - EDICIÓN:  nueva-factura.html?id=12     (con el id de la factura a editar)
 import { FacturaService } from "./FacturaService.js";
 import { SelectorCliente } from "./SelectorCliente.js";
+import { SelectorArticulo } from "./SelectorArticulo.js";
 import type {
     ArticuloPrecioDTO,
     FacturaDetalleRequestDTO,
@@ -36,6 +37,7 @@ const modoEdicion: boolean = facturaId !== null;
 // ---- Elementos DOM
 const servicio = new FacturaService();
 const selectorCliente = new SelectorCliente();
+const selectorArticulo = new SelectorArticulo();
 
 const formulario = obtener<HTMLFormElement>("#formNuevaFactura");
 const titulo = obtener<HTMLElement>("#tituloPagina");
@@ -57,7 +59,9 @@ const textoIva = obtener<HTMLElement>("#importeIva");
 const textoTotal = obtener<HTMLElement>("#importeTotal");
 
 // -------- Estado en memoria
-let catalogo: ArticuloPrecioDTO[] = [];     // artículos de la lista de precios ELEGIDA
+// Artículos de la lista elegida.
+// sirve para traducir los renglones cuando el usuario cambia de lista de precios.
+let catalogo: ArticuloPrecioDTO[] = [];
 const items: ItemFactura[] = [];            // renglones cargados por el usuario
 
 // -------- Cálculos
@@ -90,6 +94,10 @@ function envolverEnCelda(elemento: HTMLElement): HTMLTableCellElement {
     return celda;
 }
 
+function textoArticulo(articulo: ArticuloPrecioDTO): string {
+    return `${articulo.codigo} — ${articulo.denominacion}`;
+}
+
 function crearInputNumero(valor: number, min: string, step: string): HTMLInputElement {
     const input = document.createElement("input");
     input.type = "number";
@@ -100,16 +108,14 @@ function crearInputNumero(valor: number, min: string, step: string): HTMLInputEl
 }
 
 function crearFilaItem(item: ItemFactura): HTMLTableRowElement {
-    // --- <select> de artículos (solo los de la lista de precios elegida)
-    const selectArticulo = document.createElement("select");
-    selectArticulo.innerHTML = `<option value="">Seleccionar artículo</option>`;
-    for (const articulo of catalogo) {
-        const opcion = document.createElement("option");
-        opcion.value = String(articulo.listaPrecioArticuloId);
-        opcion.textContent = `${articulo.codigo} — ${articulo.denominacion}`;
-        opcion.selected = item.articulo?.listaPrecioArticuloId === articulo.listaPrecioArticuloId;
-        selectArticulo.appendChild(opcion);
-    }
+    // --- Campo de artículo: de solo lectura. Al hacer clic abre el popover de búsqueda
+    //     (el mismo patrón que el campo "Cliente").
+    const inputArticulo = document.createElement("input");
+    inputArticulo.type = "text";
+    inputArticulo.readOnly = true;
+    inputArticulo.autocomplete = "off";
+    inputArticulo.placeholder = "Clic para buscar un artículo";
+    inputArticulo.value = item.articulo ? textoArticulo(item.articulo) : "";
 
     const inputCantidad = crearInputNumero(item.cantidad, "0.01", "any");
     const inputBonificacion = crearInputNumero(item.porcentajeBonificacion, "0", "any");
@@ -129,12 +135,26 @@ function crearFilaItem(item: ItemFactura): HTMLTableRowElement {
         actualizarResumen();
     };
 
-    // --- Eventos: cada cambio del usuario se copia al objeto "item" en memoria
-    selectArticulo.addEventListener("change", () => {
-        item.articulo = catalogo.find(
-            (a) => String(a.listaPrecioArticuloId) === selectArticulo.value
-        ) ?? null;                                    // find devuelve undefined si no encuentra
+    // Abre el popover con los artículos de la lista de precios ELEGIDA.
+    const elegirArticulo = async (): Promise<void> => {
+        const listaId = Number(selectListaPrecio.value);   // "" se convierte en 0
+        if (!(listaId > 0)) return;                        // sin lista no hay artículos que mostrar
+
+        const elegido = await selectorArticulo.elegir(listaId);   // la ejecución "espera" acá
+        if (elegido === null) return;                      // el usuario canceló
+
+        item.articulo = elegido;
+        inputArticulo.value = textoArticulo(elegido);
         refrescarFila();
+    };
+
+    // --- Eventos
+    inputArticulo.addEventListener("click", () => void elegirArticulo());
+    inputArticulo.addEventListener("keydown", (event: KeyboardEvent) => {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();        // Espacio haría scroll; Enter no debe enviar nada
+            void elegirArticulo();
+        }
     });
     inputCantidad.addEventListener("input", () => {
         item.cantidad = Number(inputCantidad.value);
@@ -153,7 +173,7 @@ function crearFilaItem(item: ItemFactura): HTMLTableRowElement {
 
     const fila = document.createElement("tr");
     fila.append(
-        envolverEnCelda(selectArticulo),
+        envolverEnCelda(inputArticulo),
         envolverEnCelda(inputCantidad),
         celdaPrecio,
         envolverEnCelda(inputBonificacion),
@@ -464,7 +484,9 @@ async function cargarFacturaParaEditar(id: number): Promise<void> {
             listaPrecioArticuloId: detalle.listaPrecioArticuloId,
             codigo: detalle.codigo,
             denominacion: detalle.denominacion,
-            precioVenta: detalle.precioUnitario
+            precioVenta: detalle.precioUnitario,
+            marca: null,
+            rubro: null
         };
         if (!catalogo.includes(articulo)) catalogo.push(articulo);
 

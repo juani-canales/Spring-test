@@ -295,8 +295,12 @@ public class FacturaService {
     @Transactional(readOnly = true)
     public List<ArticuloPrecioDTO> listarArticulosConPrecio(Long listaPrecioId) {
         return em.createQuery(
-                        "SELECT new com.facturacion.DTO.ArticuloPrecioDTO(lpa.id, a.codigo, a.denominacion, lpa.precioVenta) " +
-                                "FROM ListaPrecioArticulo lpa JOIN lpa.articulo a " +
+                        "SELECT new com.facturacion.DTO.ArticuloPrecioDTO(" +
+                                "lpa.id, a.codigo, a.denominacion, lpa.precioVenta, m.denominacion, r.denominacion) " +
+                                "FROM ListaPrecioArticulo lpa " +
+                                "JOIN lpa.articulo a " +
+                                "LEFT JOIN a.marca m " +
+                                "LEFT JOIN a.rubro r " +
                                 "WHERE lpa.fechaBaja IS NULL AND lpa.listaPrecio.id = :listaPrecioId " +
                                 "ORDER BY a.denominacion",
                         ArticuloPrecioDTO.class)

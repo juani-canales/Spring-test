@@ -9,6 +9,8 @@ public record ArticuloPrecioDTO(
         Long listaPrecioArticuloId,
         String codigo,
         String denominacion,
-        double precioVenta
+        double precioVenta,
+        String marca,
+        String rubro
 ) {
 }

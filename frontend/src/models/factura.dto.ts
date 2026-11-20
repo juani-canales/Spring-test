@@ -11,6 +11,8 @@ export interface FacturaReporteDTO {
     importeTotal: number;
     estado: string;
     cantidadItems: number;
+    cae?: string | null;
+    caeFechaVencimiento?: string | null;
 }
 
 export interface FacturaDetalleRequestDTO {
@@ -78,6 +80,17 @@ export interface ArticuloPrecioDTO {
     codigo: string;
     denominacion: string;
     precioVenta: number;
+    marca: string | null;
+    rubro: string | null;
+}
+
+// filtros del popover de artículos
+export interface ArticuloFiltrosDTO {
+    codigo?: string;
+    denominacion?: string;
+    marca?: string;
+    rubro?: string;
+    precioMinimo?: number;         // trae los artículos con este precio o más
 }
 
 // ---- Espejo de ListaPrecioDTO.java
