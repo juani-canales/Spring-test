@@ -232,12 +232,13 @@ public class FacturaService {
         // 2) Solo las facturas de la página pedida
         String jpql = "SELECT new com.facturacion.DTO.FacturaReporteDTO(" +
                 "f.id, f.numero, f.fechaEmision, COALESCE(c.denominacion, 'Consumidor Final'), " +
-                "ci.denominacion, pv.descripcion, f.importeTotal, f.estado, COUNT(d)) " +
+                "ci.denominacion, pv.descripcion, f.importeTotal, f.estado, COUNT(d), " +
+                "f.cae, f.caeFechaVencimiento) " +                       // NUEVO
                 desde +
                 "LEFT JOIN f.detalles d " +
                 where +
                 "GROUP BY f.id, f.numero, f.fechaEmision, c.denominacion, ci.denominacion, " +
-                "pv.descripcion, f.importeTotal, f.estado " +
+                "pv.descripcion, f.importeTotal, f.estado, f.cae, f.caeFechaVencimiento " +   // NUEVO
                 "ORDER BY f.fechaEmision DESC, f.id DESC";
 
         TypedQuery<FacturaReporteDTO> consultaPagina = em.createQuery(jpql, FacturaReporteDTO.class);

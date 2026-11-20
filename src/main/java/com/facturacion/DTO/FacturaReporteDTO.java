@@ -22,6 +22,8 @@ public class FacturaReporteDTO {
     private double importeTotal;
     private String estado;
     private long cantidadItems;
+    private String cae;
+    private Date caeFechaVencimiento;
 
     public static FacturaReporteDTO toEntity(FacturaVenta factura){
         String clienteDenom = (factura.getCliente() != null) ? factura.getCliente().getDenominacion() : "Consumidor Final";
@@ -34,7 +36,9 @@ public class FacturaReporteDTO {
                 factura.getPuntoVenta().getDescripcion(),
                 factura.getImporteTotal(),
                 factura.getEstado(),
-                factura.getDetalles().size()
+                factura.getDetalles().size(),
+                factura.getCae(),
+                factura.getCaeFechaVencimiento()
         );
     }
 }

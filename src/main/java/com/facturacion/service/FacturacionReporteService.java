@@ -31,13 +31,17 @@ public class FacturacionReporteService {
 
             String jpql =
                     "SELECT new com.facturacion.DTO.FacturaReporteDTO(" +
+                            "f.id, " +
                             "f.numero, " +
                             "f.fechaEmision, " +
                             "COALESCE(c.denominacion, 'Consumidor Final'), " +
                             "ci.denominacion, " +
                             "pv.descripcion, " +
                             "f.importeTotal, " +
-                            "COUNT(d)) " +
+                            "f.estado, " +
+                            "COUNT(d), " +
+                            "f.cae, " +
+                            "f.caeFechaVencimiento) " +
                             "FROM FacturaVenta f " +
                             "LEFT JOIN f.cliente c " +
                             "JOIN f.condicionIva ci " +
@@ -45,7 +49,8 @@ public class FacturacionReporteService {
                             "JOIN f.detalles d " +
                             "GROUP BY f.id, f.numero, f.fechaEmision, " +
                             "c.denominacion, ci.denominacion, " +
-                            "pv.descripcion, f.importeTotal";
+                            "pv.descripcion, f.importeTotal, f.estado, " +
+                            "f.cae, f.caeFechaVencimiento";
 
             List<FacturaReporteDTO> reporte =
                     em.createQuery(jpql, FacturaReporteDTO.class)

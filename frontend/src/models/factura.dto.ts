@@ -11,6 +11,8 @@ export interface FacturaReporteDTO {
     importeTotal: number;
     estado: string;
     cantidadItems: number;
+    cae?: string | null;
+    caeFechaVencimiento?: string | null;
 }
 
 export interface FacturaDetalleRequestDTO {
@@ -27,7 +29,7 @@ export interface FacturaRequestDTO {
     condicionIvaId: number;
     puntoVentaId: number;
     tipoMonedaId: number;
-    listaPrecioId?: number;          // NUEVO: opcional acá porque el PUT parcial (edición) puede omitirlo
+    listaPrecioId?: number;
     importeCobrado?: number;
     observaciones?: string;
     estado?: string;
@@ -44,7 +46,7 @@ export interface FacturaFiltrosDTO {
     condicionIvaId?: number;
 }
 
-// ---- Espejo de PaginaDTO<T>.java (T = tipo de cada elemento) ---------------
+// ---- Espejo de PaginaDTO<T>.java (T = tipo de cada elemento)
 export interface Pagina<T> {
     contenido: T[];
     pagina: number;                // 0-based: la primera página es la 0
@@ -53,7 +55,7 @@ export interface Pagina<T> {
     totalPaginas: number;
 }
 
-// ---- Espejo de ClienteResumenDTO.java --------------------------------------
+// ---- Espejo de ClienteResumenDTO.java
 export interface ClienteResumenDTO {
     id: number;
     denominacion: string;
@@ -71,7 +73,7 @@ export interface ClienteFiltrosDTO {
     domicilio?: string;
 }
 
-// ---- Espejo de ArticuloPrecioDTO.java --------------------------------------
+// ---- Espejo de ArticuloPrecioDTO.java
 export interface ArticuloPrecioDTO {
     listaPrecioArticuloId: number;
     codigo: string;
@@ -79,14 +81,14 @@ export interface ArticuloPrecioDTO {
     precioVenta: number;
 }
 
-// ---- NUEVO: espejo de ListaPrecioDTO.java ----------------------------------
+// ---- Espejo de ListaPrecioDTO.java
 export interface ListaPrecioDTO {
     id: number;
     codigo: string;
     denominacion: string;
 }
 
-// ---- NUEVO: espejo de FacturaItemEdicionDTO.java ---------------------------
+// ---- Espejo de FacturaItemEdicionDTO.java
 export interface FacturaItemEdicionDTO {
     listaPrecioArticuloId: number;
     codigo: string;
@@ -96,7 +98,7 @@ export interface FacturaItemEdicionDTO {
     porcentajeBonificacion: number;
 }
 
-// ---- NUEVO: espejo de FacturaEdicionDTO.java -------------------------------
+// ---- Espejo de FacturaEdicionDTO.java
 export interface FacturaEdicionDTO {
     id: number;
     numero: number;

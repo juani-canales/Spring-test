@@ -72,7 +72,7 @@ async function cargarCondicionesIva(): Promise<void> {
 // ------------------ 4. Listado + paginación
 async function cargarFacturas(pagina: number): Promise<void> {
     botonBuscar.disabled = true;                                  // estado "loading" (Clase 5)
-    cuerpoTabla.innerHTML = `<tr><td colspan="7" class="sin-datos">Cargando facturas...</td></tr>`;
+    cuerpoTabla.innerHTML = `<tr><td colspan="9" class="sin-datos">Cargando facturas...</td></tr>`;
 
     try {
         const resultado = await servicio.obtenerFacturas(filtrosActuales, pagina, TAMANIO_PAGINA);
@@ -93,7 +93,7 @@ async function cargarFacturas(pagina: number): Promise<void> {
             (nuevaPagina) => void cargarFacturas(nuevaPagina)
         );
     } catch (error) {
-        cuerpoTabla.innerHTML = `<tr><td colspan="7" class="sin-datos">No se pudieron cargar las facturas.</td></tr>`;
+        cuerpoTabla.innerHTML = `<tr><td colspan="9" class="sin-datos">No se pudieron cargar las facturas.</td></tr>`;
         contenedorPaginacion.innerHTML = "";
         mostrarMensaje(mensajeDeError(error), "error");           // estado "error"
     } finally {
@@ -105,7 +105,7 @@ function dibujarTabla(facturas: FacturaReporteDTO[]): void {
     cuerpoTabla.innerHTML = "";                                   // limpiamos para no duplicar filas
 
     if (facturas.length === 0) {
-        cuerpoTabla.innerHTML = `<tr><td colspan="7" class="sin-datos">No se encontraron facturas con esos filtros.</td></tr>`;
+        cuerpoTabla.innerHTML = `<tr><td colspan="9" class="sin-datos">No se encontraron facturas con esos filtros.</td></tr>`;
         return;
     }
     for (const factura of facturas) {
@@ -122,6 +122,10 @@ function crearFila(factura: FacturaReporteDTO): HTMLTableRowElement {
         crearCelda(factura.condicionIva),
         crearCelda(formatearMoneda(factura.importeTotal)),
         crearCelda(factura.estado, `estado-${factura.estado.toLowerCase()}`),
+        crearCelda(factura.cae || "-"),
+        crearCelda(factura.caeFechaVencimiento
+            ? formatearFecha(factura.caeFechaVencimiento)
+            : "-"),
         crearCeldaAcciones(factura)
     );
     return fila;
