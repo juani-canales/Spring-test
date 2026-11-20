@@ -259,6 +259,7 @@ function validar(): string[] {
         if (leerTexto(datos, "puntoVentaId") === "") errores.push("Seleccioná un punto de venta.");
         if (leerTexto(datos, "condicionIvaId") === "") errores.push("Seleccioná la condición IVA.");
         if (leerTexto(datos, "listaPrecioId") === "") errores.push("Seleccioná una lista de precios.");
+        if (leerTexto(datos, "clienteId") === "") errores.push("Seleccioná un cliente.");
     }
 
     if (items.length === 0) errores.push("Agregá al menos un producto.");
@@ -357,7 +358,7 @@ async function abrirSelectorCliente(): Promise<void> {
 
     inputCliente.value = cliente.denominacion;
     inputClienteId.value = String(cliente.id);
-    botonQuitarCliente.hidden = false;
+    //botonQuitarCliente.hidden = false;
 }
 
 inputCliente.addEventListener("click", () => void abrirSelectorCliente());

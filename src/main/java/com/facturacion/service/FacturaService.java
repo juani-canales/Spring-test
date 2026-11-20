@@ -36,13 +36,10 @@ public class FacturaService {
             throw new IllegalArgumentException("La factura debe tener al menos un artículo.");
         }
 
-        // El cliente es OPCIONAL (si no viene, es "Consumidor Final").
-        // Ojo: em.find(Cliente.class, null) lanza IllegalArgumentException, por eso
-        // solo buscamos si el id no es null.
-        Cliente cliente = null;
-        if (dto.clienteId() != null) {
-            cliente = buscarObligatorio(Cliente.class, dto.clienteId(), "Cliente");
+        if (dto.clienteId() == null) {
+            throw new IllegalArgumentException("Seleccioná un cliente para la factura.");
         }
+        Cliente cliente = buscarObligatorio(Cliente.class, dto.clienteId(), "Cliente");
         CondicionIva condicionIva = buscarObligatorio(CondicionIva.class, dto.condicionIvaId(), "Condición IVA");
         PuntoVenta puntoVenta = buscarObligatorio(PuntoVenta.class, dto.puntoVentaId(), "Punto de venta");
         TipoMoneda tipoMoneda = buscarObligatorio(TipoMoneda.class, dto.tipoMonedaId(), "Tipo de moneda");
