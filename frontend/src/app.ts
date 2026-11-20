@@ -21,6 +21,7 @@ const inputClienteId = obtener<HTMLInputElement>("#clienteId");
 const botonBuscar = obtener<HTMLButtonElement>("#btnBuscar");
 const cajaMensaje = obtener<HTMLElement>("#mensajeGlobal");
 const selectCondicionIva = obtener<HTMLSelectElement>("#condicionIva");
+const selectFiltroEstado = obtener<HTMLSelectElement>("#filtroEstado");
 
 // ----------- 2. Estado en memoria
 // Guardamos los filtros de la ÚLTIMA búsqueda para que al cambiar de página
@@ -47,7 +48,7 @@ function leerFiltros(): FacturaFiltrosDTO {
 
     // "TODAS" no es un estado real: significa "sin filtro", por eso no lo mandamos.
     const estado = leerTexto(datos, "filtroEstado");
-    if (estado === "EMITIDA" || estado === "ANULADA") filtros.estado = estado;
+    if (estado === "EMITIDA" || estado === "ANULADA" || estado === "PENDIENTE") filtros.estado = estado;
 
     const condicionIva = leerTexto(datos, "condicionIva");
     if (condicionIva !== "") filtros.condicionIvaId = Number(condicionIva);
@@ -116,7 +117,7 @@ function dibujarTabla(facturas: FacturaReporteDTO[]): void {
 function crearFila(factura: FacturaReporteDTO): HTMLTableRowElement {
     const fila = document.createElement("tr");
     fila.append(
-        crearCelda(String(factura.numeroFactura)),
+        crearCelda(factura.numeroFactura !== null ? String(factura.numeroFactura) : "—"),
         crearCelda(formatearFecha(factura.fechaEmision)),
         crearCelda(factura.clienteDenominacion),
         crearCelda(factura.condicionIva),
@@ -144,24 +145,28 @@ function crearCeldaAcciones(factura: FacturaReporteDTO): HTMLTableCellElement {
     const celda = document.createElement("td");
     celda.className = "acciones-fila";
 
-    if (factura.estado !== "ANULADA") {                           // una anulada no se puede anular otra vez
+    // Solo una factura PENDIENTE (nunca informada a ARCA) admite acciones.
+    // Una EMITIDA tiene CAE: no se edita, no se anula y no se borra (se corrige con nota de crédito).
+    if (factura.estado === "PENDIENTE") {
         celda.appendChild(crearBotonAccion("Editar", "btn-editor", () => {
             window.location.href = `nueva-factura.html?id=${factura.id}`;
         }));
         celda.appendChild(crearBotonAccion("Anular", "btn-anulado", () => void anular(factura)));
+        celda.appendChild(crearBotonAccion("Eliminar", "btn-peligro", () => void eliminar(factura)));
+    } else {
+        celda.textContent = "—";
     }
-    celda.appendChild(crearBotonAccion("Eliminar", "btn-peligro", () => void eliminar(factura)));
     return celda;
 }
 
 // ------------------ 5. Anular / Eliminar
 async function anular(factura: FacturaReporteDTO): Promise<void> {
-    if (!confirm(`¿Anular la factura N° ${factura.numeroFactura}?`)) return;
+    if (!confirm(`¿Anular la factura ${etiquetaNumero(factura)}?`)) return;
 
     const motivo = prompt("Motivo de la anulación (opcional):");  // string | null
     try {
         await servicio.actualizarEstado(factura.id, "ANULADA", motivo?.trim() || undefined);
-        mostrarMensaje(`Factura N° ${factura.numeroFactura} anulada.`, "exito");
+        mostrarMensaje(`Factura N° ${etiquetaNumero(factura)} anulada.`, "exito");
         await cargarFacturas(paginaActual);                       // recargamos la MISMA página
     } catch (error) {
         mostrarMensaje(mensajeDeError(error), "error");
@@ -169,11 +174,11 @@ async function anular(factura: FacturaReporteDTO): Promise<void> {
 }
 
 async function eliminar(factura: FacturaReporteDTO): Promise<void> {
-    if (!confirm(`¿Eliminar DEFINITIVAMENTE la factura N° ${factura.numeroFactura}? Esta acción no se puede deshacer.`)) return;
+    if (!confirm(`¿Eliminar DEFINITIVAMENTE la factura N° ${etiquetaNumero(factura)}? Esta acción no se puede deshacer.`)) return;
 
     try {
         await servicio.eliminarFactura(factura.id);
-        mostrarMensaje(`Factura N° ${factura.numeroFactura} eliminada.`, "exito");
+        mostrarMensaje(`Factura N° ${etiquetaNumero(factura)} eliminada.`, "exito");
         await cargarFacturas(paginaActual);
     } catch (error) {
         mostrarMensaje(mensajeDeError(error), "error");
@@ -225,14 +230,21 @@ formFiltros.addEventListener("reset", () => {
 // ------------------ 9. Arranque
 // Un <script type="module"> se ejecuta cuando el HTML ya está cargado: no hace falta DOMContentLoaded.
 const parametros = new URLSearchParams(window.location.search);
-const creada = parametros.get("creada");
-const editada = parametros.get("editada");
-if (creada !== null) {
-    mostrarMensaje(`Factura N° ${creada} creada correctamente.`, "exito");
-} else if (editada !== null) {
-    mostrarMensaje(`Factura N° ${editada} actualizada correctamente.`, "exito");
+const informada = parametros.get("informada");
+const pendiente = parametros.get("pendiente");
+if (informada !== null) {
+    mostrarMensaje(`Factura N° ${informada} informada a ARCA correctamente.`, "exito");
+} else if (pendiente !== null) {
+    mostrarMensaje("Factura guardada como PENDIENTE. Podés editarla e informarla a ARCA cuando quieras.", "exito");
+    selectFiltroEstado.value = "PENDIENTE";   // si no, el filtro por defecto (Emitidas) no la mostraría
 }
 
-filtrosActuales = leerFiltros();       // al inicio: estado EMITIDA (el valor por defecto del select)
+filtrosActuales = leerFiltros();   // después de tocar el select, para que tome el valor nuevo
+
 void cargarCondicionesIva();
 void cargarFacturas(0);
+
+//---------
+function etiquetaNumero(factura: FacturaReporteDTO): string {
+    return factura.numeroFactura !== null ? `N° ${factura.numeroFactura}` : "(pendiente, sin número)";
+}

@@ -11,6 +11,7 @@ public record FacturaRequestDTO(
         Double importeCobrado,
         String observaciones,
         String estado,
+        Boolean informar,           // true = pedir el CAE a ARCA; null/false = solo guardar
         List<FacturaDetalleRequestDTO> detalles
 ) {
 }

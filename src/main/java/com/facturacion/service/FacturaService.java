@@ -55,7 +55,7 @@ public class FacturaService {
         // importeCobrado es Double (puede ser null) pero la entidad usa double: evitamos el NullPointerException
         factura.setImporteCobrado(dto.importeCobrado() != null ? dto.importeCobrado() : 0.0);
         factura.setObservaciones(dto.observaciones());
-        factura.setEstado("EMITIDA");
+        factura.setEstado("PENDIENTE");
 
         Usuario usuarioAuditoria = em.find(Usuario.class, 1L);
         if (usuarioAuditoria != null) {
@@ -67,7 +67,9 @@ public class FacturaService {
         }
 
         factura.calcularImportes();
-        afip.autorizar(factura);     // <-- NUEVO: pide el CAE antes de guardar
+        if (Boolean.TRUE.equals(dto.informar())) {   // "Guardar e Informar"
+            informarAArca(factura);                  // pide el CAE y la pasa a EMITIDA
+        }
         em.persist(factura);   // CascadeType.ALL persiste también los detalles
         em.flush();
 
@@ -79,11 +81,16 @@ public class FacturaService {
     public FacturaReporteDTO actualizar(Long id, FacturaRequestDTO dto) {
         FacturaVenta factura = buscarObligatorio(FacturaVenta.class, id, "Factura");
 
-        // NUEVO: una factura anulada no admite cambios de artículos
-        boolean editaRenglones = dto.detalles() != null;
-        if (editaRenglones && "ANULADA".equals(factura.getEstado())) {
-            throw new IllegalArgumentException("No se pueden modificar los artículos de una factura anulada.");
+        // REGLA: solo las PENDIENTES se pueden modificar (esto incluye anularlas).
+        exigirPendiente(factura, "modificar");
+
+        // Por acá el estado solo puede pasar a ANULADA. EMITIDA se alcanza únicamente informando a ARCA;
+        // si no, cualquiera podría marcar una factura como EMITIDA sin tener CAE.
+        if (dto.estado() != null && !"ANULADA".equals(dto.estado())) {
+            throw new IllegalArgumentException("El estado solo puede cambiarse a ANULADA. Para emitir la factura usá 'Guardar e Informar'.");
         }
+
+        boolean editaRenglones = dto.detalles() != null;
 
         if (dto.puntoVentaId() != null) {
             factura.setPuntoVenta(buscarObligatorio(PuntoVenta.class, dto.puntoVentaId(), "Punto de venta"));
@@ -129,15 +136,21 @@ public class FacturaService {
             factura.calcularImportes();
         }
 
+        if (Boolean.TRUE.equals(dto.informar())) {   // "Guardar e Informar" desde la pantalla de edición
+            informarAArca(factura);
+        }
+
         return FacturaReporteDTO.toEntity(factura);
     }
 
     // ------ ELIMINAR
-    // Decisión de negocio: "Anular" (PUT estado=ANULADA) es la baja LÓGICA: la factura queda en la BD.
+    // Decisión de negocio: "Anular" (PUT estado=ANULADA) es la baja LÓGICA.
     // "Eliminar" (DELETE) es la baja FÍSICA: se borra la factura y sus detalles (cascade).
     @Transactional
     public void eliminar(Long id) {
         FacturaVenta factura = buscarObligatorio(FacturaVenta.class, id, "Factura");
+        // "Eliminar" solo vale para pendientes
+        exigirPendiente(factura, "eliminar");
         em.remove(factura);
     }
 
@@ -343,6 +356,34 @@ public class FacturaService {
         detalle.setImporteIva(iva);
         detalle.setImporteSubtotal(neto + iva);
         return detalle;
+    }
+
+    /**
+     * Pide el CAE a ARCA y deja la factura EMITIDA.
+     * Si ARCA rechaza, autorizar() lanza excepción: la transacción se revierte y no se guarda nada.
+     */
+    private void informarAArca(FacturaVenta factura) {
+        if (!"PENDIENTE".equals(factura.getEstado())) {
+            throw new IllegalArgumentException("Solo una factura pendiente puede informarse a ARCA.");
+        }
+        if (factura.getDetalles().isEmpty()) {
+            throw new IllegalArgumentException("La factura debe tener al menos un artículo.");
+        }
+        factura.setFechaEmision(new Date());   // ARCA exige una fecha cercana a la de hoy
+        factura.calcularImportes();
+        afip.autorizar(factura);               // completa numero, cae, vencimiento y resultadoAfip
+        factura.setEstado("EMITIDA");          // recién acá, con CAE en mano, pasa a EMITIDA
+    }
+
+    /** Solo las facturas PENDIENTES admiten cambios. 'accion' es un verbo: "modificar", "eliminar". */
+    private void exigirPendiente(FacturaVenta factura, String accion) {
+        if ("PENDIENTE".equals(factura.getEstado())) return;
+
+        String motivo = "EMITIDA".equals(factura.getEstado())
+                ? "ya fue informada a ARCA (CAE " + factura.getCae() + "). Para corregirla hay que emitir una nota de crédito"
+                : "está en estado " + factura.getEstado();
+        throw new IllegalArgumentException("No se puede " + accion + " la factura: " + motivo
+                + ". Solo se pueden " + accion + " facturas PENDIENTES.");
     }
 
 }

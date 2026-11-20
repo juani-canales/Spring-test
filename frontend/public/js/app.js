@@ -14,6 +14,7 @@ const inputClienteId = obtener("#clienteId");
 const botonBuscar = obtener("#btnBuscar");
 const cajaMensaje = obtener("#mensajeGlobal");
 const selectCondicionIva = obtener("#condicionIva");
+const selectFiltroEstado = obtener("#filtroEstado");
 // ----------- 2. Estado en memoria
 // Guardamos los filtros de la ÚLTIMA búsqueda para que al cambiar de página
 // se sigan aplicando (aunque el usuario haya tocado el formulario sin buscar).
@@ -37,7 +38,7 @@ function leerFiltros() {
         filtros.fechaHasta = hasta;
     // "TODAS" no es un estado real: significa "sin filtro", por eso no lo mandamos.
     const estado = leerTexto(datos, "filtroEstado");
-    if (estado === "EMITIDA" || estado === "ANULADA")
+    if (estado === "EMITIDA" || estado === "ANULADA" || estado === "PENDIENTE")
         filtros.estado = estado;
     const condicionIva = leerTexto(datos, "condicionIva");
     if (condicionIva !== "")
@@ -61,7 +62,7 @@ async function cargarCondicionesIva() {
 // ------------------ 4. Listado + paginación
 async function cargarFacturas(pagina) {
     botonBuscar.disabled = true; // estado "loading" (Clase 5)
-    cuerpoTabla.innerHTML = `<tr><td colspan="9" class="sin-datos">Cargando facturas...</td></tr>`;
+    cuerpoTabla.innerHTML = `<tr><td colspan="7" class="sin-datos">Cargando facturas...</td></tr>`;
     try {
         const resultado = await servicio.obtenerFacturas(filtrosActuales, pagina, TAMANIO_PAGINA);
         // Si borramos el último elemento de la última página, esa página quedó vacía: retrocedemos una.
@@ -74,7 +75,7 @@ async function cargarFacturas(pagina) {
         renderizarPaginacion(contenedorPaginacion, resultado.pagina, resultado.totalPaginas, resultado.totalElementos, (nuevaPagina) => void cargarFacturas(nuevaPagina));
     }
     catch (error) {
-        cuerpoTabla.innerHTML = `<tr><td colspan="9" class="sin-datos">No se pudieron cargar las facturas.</td></tr>`;
+        cuerpoTabla.innerHTML = `<tr><td colspan="7" class="sin-datos">No se pudieron cargar las facturas.</td></tr>`;
         contenedorPaginacion.innerHTML = "";
         mostrarMensaje(mensajeDeError(error), "error"); // estado "error"
     }
@@ -85,7 +86,7 @@ async function cargarFacturas(pagina) {
 function dibujarTabla(facturas) {
     cuerpoTabla.innerHTML = ""; // limpiamos para no duplicar filas
     if (facturas.length === 0) {
-        cuerpoTabla.innerHTML = `<tr><td colspan="9" class="sin-datos">No se encontraron facturas con esos filtros.</td></tr>`;
+        cuerpoTabla.innerHTML = `<tr><td colspan="7" class="sin-datos">No se encontraron facturas con esos filtros.</td></tr>`;
         return;
     }
     for (const factura of facturas) {
@@ -94,9 +95,7 @@ function dibujarTabla(facturas) {
 }
 function crearFila(factura) {
     const fila = document.createElement("tr");
-    fila.append(crearCelda(String(factura.numeroFactura)), crearCelda(formatearFecha(factura.fechaEmision)), crearCelda(factura.clienteDenominacion), crearCelda(factura.condicionIva), crearCelda(formatearMoneda(factura.importeTotal)), crearCelda(factura.estado, `estado-${factura.estado.toLowerCase()}`), crearCelda(factura.cae || "-"), crearCelda(factura.caeFechaVencimiento
-        ? formatearFecha(factura.caeFechaVencimiento)
-        : "-"), crearCeldaAcciones(factura));
+    fila.append(crearCelda(factura.numeroFactura !== null ? String(factura.numeroFactura) : "—"), crearCelda(formatearFecha(factura.fechaEmision)), crearCelda(factura.clienteDenominacion), crearCelda(factura.condicionIva), crearCelda(formatearMoneda(factura.importeTotal)), crearCelda(factura.estado, `estado-${factura.estado.toLowerCase()}`), crearCeldaAcciones(factura));
     return fila;
 }
 function crearBotonAccion(texto, clase, alHacerClic) {
@@ -110,23 +109,28 @@ function crearBotonAccion(texto, clase, alHacerClic) {
 function crearCeldaAcciones(factura) {
     const celda = document.createElement("td");
     celda.className = "acciones-fila";
-    if (factura.estado !== "ANULADA") { // una anulada no se puede anular otra vez
+    // Solo una factura PENDIENTE (nunca informada a ARCA) admite acciones.
+    // Una EMITIDA tiene CAE: no se edita, no se anula y no se borra (se corrige con nota de crédito).
+    if (factura.estado === "PENDIENTE") {
         celda.appendChild(crearBotonAccion("Editar", "btn-editor", () => {
             window.location.href = `nueva-factura.html?id=${factura.id}`;
         }));
         celda.appendChild(crearBotonAccion("Anular", "btn-anulado", () => void anular(factura)));
+        celda.appendChild(crearBotonAccion("Eliminar", "btn-peligro", () => void eliminar(factura)));
     }
-    celda.appendChild(crearBotonAccion("Eliminar", "btn-peligro", () => void eliminar(factura)));
+    else {
+        celda.textContent = "—";
+    }
     return celda;
 }
 // ------------------ 5. Anular / Eliminar
 async function anular(factura) {
-    if (!confirm(`¿Anular la factura N° ${factura.numeroFactura}?`))
+    if (!confirm(`¿Anular la factura ${etiquetaNumero(factura)}?`))
         return;
     const motivo = prompt("Motivo de la anulación (opcional):"); // string | null
     try {
         await servicio.actualizarEstado(factura.id, "ANULADA", motivo?.trim() || undefined);
-        mostrarMensaje(`Factura N° ${factura.numeroFactura} anulada.`, "exito");
+        mostrarMensaje(`Factura N° ${etiquetaNumero(factura)} anulada.`, "exito");
         await cargarFacturas(paginaActual); // recargamos la MISMA página
     }
     catch (error) {
@@ -134,11 +138,11 @@ async function anular(factura) {
     }
 }
 async function eliminar(factura) {
-    if (!confirm(`¿Eliminar DEFINITIVAMENTE la factura N° ${factura.numeroFactura}? Esta acción no se puede deshacer.`))
+    if (!confirm(`¿Eliminar DEFINITIVAMENTE la factura N° ${etiquetaNumero(factura)}? Esta acción no se puede deshacer.`))
         return;
     try {
         await servicio.eliminarFactura(factura.id);
-        mostrarMensaje(`Factura N° ${factura.numeroFactura} eliminada.`, "exito");
+        mostrarMensaje(`Factura N° ${etiquetaNumero(factura)} eliminada.`, "exito");
         await cargarFacturas(paginaActual);
     }
     catch (error) {
@@ -185,14 +189,19 @@ formFiltros.addEventListener("reset", () => {
 // ------------------ 9. Arranque
 // Un <script type="module"> se ejecuta cuando el HTML ya está cargado: no hace falta DOMContentLoaded.
 const parametros = new URLSearchParams(window.location.search);
-const creada = parametros.get("creada");
-const editada = parametros.get("editada");
-if (creada !== null) {
-    mostrarMensaje(`Factura N° ${creada} creada correctamente.`, "exito");
+const informada = parametros.get("informada");
+const pendiente = parametros.get("pendiente");
+if (informada !== null) {
+    mostrarMensaje(`Factura N° ${informada} informada a ARCA correctamente.`, "exito");
 }
-else if (editada !== null) {
-    mostrarMensaje(`Factura N° ${editada} actualizada correctamente.`, "exito");
+else if (pendiente !== null) {
+    mostrarMensaje("Factura guardada como PENDIENTE. Podés editarla e informarla a ARCA cuando quieras.", "exito");
+    selectFiltroEstado.value = "PENDIENTE"; // si no, el filtro por defecto (Emitidas) no la mostraría
 }
-filtrosActuales = leerFiltros(); // al inicio: estado EMITIDA (el valor por defecto del select)
+filtrosActuales = leerFiltros(); // después de tocar el select, para que tome el valor nuevo
 void cargarCondicionesIva();
 void cargarFacturas(0);
+//---------
+function etiquetaNumero(factura) {
+    return factura.numeroFactura !== null ? `N° ${factura.numeroFactura}` : "(pendiente, sin número)";
+}

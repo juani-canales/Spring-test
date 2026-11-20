@@ -1,9 +1,9 @@
 // Tipo literal: solo permite estos dos textos, un typo no compila.
-export type EstadoFactura = "EMITIDA" | "ANULADA";
+export type EstadoFactura = "PENDIENTE" | "EMITIDA" | "ANULADA";
 
 export interface FacturaReporteDTO {
     id: number;
-    numeroFactura: number;
+    numeroFactura: number | null;
     fechaEmision: string;
     clienteDenominacion: string;
     condicionIva: string;
@@ -11,8 +11,6 @@ export interface FacturaReporteDTO {
     importeTotal: number;
     estado: string;
     cantidadItems: number;
-    cae?: string | null;
-    caeFechaVencimiento?: string | null;
 }
 
 export interface FacturaDetalleRequestDTO {
@@ -29,10 +27,11 @@ export interface FacturaRequestDTO {
     condicionIvaId: number;
     puntoVentaId: number;
     tipoMonedaId: number;
-    listaPrecioId?: number;
+    listaPrecioId?: number;          // opcional acá porque el PUT parcial (edición) puede omitirlo
     importeCobrado?: number;
     observaciones?: string;
     estado?: string;
+    informar?: boolean;
     detalles: FacturaDetalleRequestDTO[];
 }
 
@@ -101,7 +100,7 @@ export interface FacturaItemEdicionDTO {
 // ---- Espejo de FacturaEdicionDTO.java
 export interface FacturaEdicionDTO {
     id: number;
-    numero: number;
+    numero: number | null;
     fechaEmision: string;
     puntoVentaId: number;
     puntoVentaDescripcion: string;

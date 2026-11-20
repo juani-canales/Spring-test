@@ -189,3 +189,7 @@ tbody tr:hover { background: #f8fbff; }
 .btn-editor:hover {
     background-color: #BCFFB8;
 }
+
+.estado-pendiente { color: #755a00; font-weight: 700; }
+.estado-emitida   { color: var(--exito); font-weight: 700; }
+.estado-anulada   { color: #b42335; font-weight: 700; }

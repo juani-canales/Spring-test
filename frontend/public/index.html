@@ -87,6 +87,7 @@
                         <label for="filtroEstado">Estado de factura</label>
                         <select id="filtroEstado" name="filtroEstado">
                             <option value="EMITIDA" selected>Emitidas</option>
+                            <option value="PENDIENTE">Pendientes</option>
                             <option value="ANULADA">Anuladas</option>
                             <option value="TODAS">Todas (incluidas anuladas)</option>
                         </select>
@@ -116,8 +117,6 @@
                 </div>
             </div>
 
-            <!--El profesor no dijo que debemos páginar al mostrar las facturas. Como con los clientes, mostramos 10 facturas
-            en la página 1 y si selecciono la página 2 muestro las siguientes 10 facturas que me va a devolver el back.-->
             <div class="tabla-contenedor">
                 <table>
                     <thead>

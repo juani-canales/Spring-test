@@ -10,7 +10,6 @@ const ALICUOTA_IVA = 0.21; // el backend usa el mismo 21%: acá es solo una vist
 const idParam = new URLSearchParams(window.location.search).get("id");
 const facturaId = idParam !== null ? Number(idParam) : null;
 const modoEdicion = facturaId !== null;
-const textoBotonGuardar = modoEdicion ? "Guardar cambios" : "Guardar factura";
 // ---- Elementos DOM
 const servicio = new FacturaService();
 const selectorCliente = new SelectorCliente();
@@ -26,7 +25,8 @@ const selectCondicionIva = obtener("#condicionIvaId");
 const selectListaPrecio = obtener("#listaPrecioId");
 const botonQuitarCliente = obtener("#btnQuitarCliente");
 const botonAgregar = obtener("#btnAgregarItem");
-const botonGuardar = obtener("button[type='submit']", formulario);
+const botonGuardarSinInformar = obtener("#btnGuardarSinInformar");
+const botonGuardarEInformar = obtener("#btnGuardarEInformar");
 const cuerpoDetalles = obtener("#tablaDetalles");
 const textoNeto = obtener("#importeNeto");
 const textoIva = obtener("#importeIva");
@@ -252,7 +252,7 @@ function construirDetalles() {
     }
     return detalles;
 }
-function construirRequestAlta() {
+function construirRequestAlta(informar) {
     const datos = new FormData(formulario);
     const clienteId = leerTexto(datos, "clienteId");
     return {
@@ -262,39 +262,47 @@ function construirRequestAlta() {
         tipoMonedaId: Number(leerTexto(datos, "tipoMonedaId")),
         listaPrecioId: Number(leerTexto(datos, "listaPrecioId")),
         importeCobrado: 0,
+        informar,
         detalles: construirDetalles()
     };
 }
-// En edición mandamos SOLO los renglones. Lo que no mandamos, el backend lo deja como estaba (PUT parcial).
-// La lista de precios no se manda: el backend la deduce de los renglones que ya tiene la factura.
-function construirRequestEdicion() {
-    return { detalles: construirDetalles() };
+function construirRequestEdicion(informar) {
+    return { detalles: construirDetalles(), informar };
 }
-async function guardarFactura() {
+async function guardarFactura(informar) {
     const errores = validar();
     if (errores.length > 0) {
         mostrarErrores(errores);
         return;
     }
+    // Informar a ARCA no tiene vuelta atrás: pedimos confirmación explícita.
+    if (informar && !confirm("¿Informar la factura a ARCA?\nUna vez emitida no podrá modificarse ni anularse.")) {
+        return;
+    }
     cajaValidacion.hidden = true;
-    botonGuardar.disabled = true;
-    botonGuardar.textContent = "Guardando...";
+    const botonPresionado = informar ? botonGuardarEInformar : botonGuardarSinInformar;
+    const textoOriginal = botonPresionado.textContent ?? "";
+    bloquearBotones(true);
+    botonPresionado.textContent = informar ? "Informando a ARCA..." : "Guardando...";
     try {
-        if (facturaId !== null) {
-            const actualizada = await servicio.actualizarFactura(facturaId, construirRequestEdicion());
-            window.location.href = `index.html?editada=${actualizada.numeroFactura}`;
-        }
-        else {
-            const creada = await servicio.crearFactura(construirRequestAlta());
-            // Volvemos al listado; index.html lee ?creada=... y muestra el mensaje de éxito.
-            window.location.href = `index.html?creada=${creada.numeroFactura}`;
-        }
+        // Ambas ramas devuelven Promise<FacturaReporteDTO>, TypeScript infiere el tipo.
+        const resultado = facturaId !== null
+            ? await servicio.actualizarFactura(facturaId, construirRequestEdicion(informar))
+            : await servicio.crearFactura(construirRequestAlta(informar));
+        // Volvemos al listado; index.html lee el parámetro y muestra el mensaje de éxito.
+        window.location.href = informar
+            ? `index.html?informada=${resultado.numeroFactura}`
+            : `index.html?pendiente=1`;
     }
     catch (error) {
         mostrarErrores([mensajeDeError(error)]);
-        botonGuardar.disabled = false;
-        botonGuardar.textContent = textoBotonGuardar;
+        botonPresionado.textContent = textoOriginal;
+        bloquearBotones(false);
     }
+}
+function bloquearBotones(bloquear) {
+    botonGuardarSinInformar.disabled = bloquear;
+    botonGuardarEInformar.disabled = bloquear;
 }
 // --------- Cliente
 async function abrirSelectorCliente() {
@@ -329,8 +337,9 @@ botonAgregar.addEventListener("click", () => {
 });
 formulario.addEventListener("submit", (event) => {
     event.preventDefault();
-    void guardarFactura();
 });
+botonGuardarSinInformar.addEventListener("click", () => void guardarFactura(false));
+botonGuardarEInformar.addEventListener("click", () => void guardarFactura(true));
 // -------- Modo edición: precargar datos y deshabilitar campos
 /** Selecciona la opción con ese id; si el <select> no la tiene (opciones fijas del HTML), la crea. */
 function fijarSelect(select, id, texto) {
@@ -346,17 +355,20 @@ function fijarSelect(select, id, texto) {
 }
 async function cargarFacturaParaEditar(id) {
     const factura = await servicio.obtenerFacturaParaEdicion(id);
-    if (factura.estado === "ANULADA") {
-        throw new Error("La factura está anulada y no se puede editar.");
+    if (factura.estado !== "PENDIENTE") {
+        throw new Error(factura.estado === "EMITIDA"
+            ? "La factura ya fue informada a ARCA y no puede editarse."
+            : "La factura está anulada y no se puede editar.");
     }
     // La lista se deduce de los renglones: sin renglones no sabemos de qué lista son los artículos.
     if (factura.listaPrecioId === null) {
         throw new Error("Esta factura no tiene artículos, por lo que no se puede determinar su lista de precios.");
     }
     // Textos de la pantalla
-    document.title = `Editar Factura | Sistema de Facturación`;
-    titulo.textContent = `Editar Factura N° ${factura.numero}`;
-    subtitulo.textContent = "Podés agregar o quitar productos de la factura. La lista de precios no se puede cambiar.";
+    const etiqueta = factura.numero !== null ? ` N° ${factura.numero}` : " pendiente";
+    document.title = "Editar Factura | Sistema de Facturación";
+    titulo.textContent = `Editar Factura${etiqueta}`;
+    subtitulo.textContent = "Podés modificar los productos y luego guardarla sin informar o informarla a ARCA. La lista de precios no se puede cambiar.";
     // Campos que solo se MUESTRAN: los cargamos y los deshabilitamos
     inputFecha.value = factura.fechaEmision.substring(0, 10); // "2026-10-31T00:00..." -> "2026-10-31"
     fijarSelect(selectPuntoVenta, factura.puntoVentaId, factura.puntoVentaDescripcion);
@@ -393,7 +405,6 @@ async function cargarFacturaParaEditar(id) {
 }
 // -------- Arranque
 async function iniciar() {
-    botonGuardar.textContent = textoBotonGuardar;
     botonAgregar.disabled = true;
     inputFecha.value = fechaDeHoy(); // en alta: la fecha real la fija el servidor; acá solo se muestra
     // En edición cambiamos el título YA, sin esperar al servidor (después se le agrega el número).
@@ -410,7 +421,6 @@ async function iniciar() {
     }
     catch (error) {
         mostrarErrores([mensajeDeError(error)]);
-        botonGuardar.disabled = true; // si no se pudo cargar bien, no dejamos guardar
     }
     botonAgregar.disabled = selectListaPrecio.value === "";
     renderizarTabla();
