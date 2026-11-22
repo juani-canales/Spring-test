@@ -23,6 +23,8 @@ Aplicación web para gestionar **facturas de venta** y emitirlas ante **ARCA (ex
 
 **Año:** 2026
 
+**Grupo:** 4
+
 ---
  
 ## 🧾 ¿Qué hace el sistema?
