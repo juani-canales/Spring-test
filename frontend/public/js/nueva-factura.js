@@ -6,6 +6,7 @@ import { SelectorCliente } from "./SelectorCliente.js";
 import { SelectorArticulo } from "./SelectorArticulo.js";
 import { fechaDeHoy, formatearMoneda, leerTexto, mensajeDeError, obtener } from "./utils.js";
 const ALICUOTA_IVA = 0.21; // el backend usa el mismo 21%: acá es solo una vista previa
+const CODIGO_AFIP_CONSUMIDOR_FINAL = 5; // mismo código de ARCA que usa el backend
 // ----- Modo (alta o edición)
 // Si la URL trae ?id=12 estamos editando; si no, estamos creando.
 const idParam = new URLSearchParams(window.location.search).get("id");
@@ -33,6 +34,7 @@ const cuerpoDetalles = obtener("#tablaDetalles");
 const textoNeto = obtener("#importeNeto");
 const textoIva = obtener("#importeIva");
 const textoTotal = obtener("#importeTotal");
+const etiquetaCliente = obtener('label[for="buscarCliente"]');
 // -------- Estado en memoria
 // Artículos de la lista elegida.
 // sirve para traducir los renglones cuando el usuario cambia de lista de precios.
@@ -153,10 +155,12 @@ function renderizarTabla() {
     actualizarResumen();
 }
 // -------- Opciones de los <select> (vienen de la base de datos)
-function agregarOpcion(select, valor, texto) {
+function agregarOpcion(select, valor, texto, codigoAfip) {
     const opcion = document.createElement("option");
     opcion.value = String(valor);
     opcion.textContent = texto;
+    if (codigoAfip !== undefined)
+        opcion.dataset.codigoAfip = String(codigoAfip); // NUEVO
     select.appendChild(opcion);
 }
 async function cargarSelects() {
@@ -169,7 +173,7 @@ async function cargarSelects() {
     for (const pv of puntosVenta)
         agregarOpcion(selectPuntoVenta, pv.id, `${pv.descripcion} — N.º ${pv.numero}`);
     for (const ci of condiciones)
-        agregarOpcion(selectCondicionIva, ci.id, ci.denominacion);
+        agregarOpcion(selectCondicionIva, ci.id, ci.denominacion, ci.codigoAfip);
     for (const lp of listas)
         agregarOpcion(selectListaPrecio, lp.id, `${lp.codigo} — ${lp.denominacion}`);
 }
@@ -216,6 +220,19 @@ async function alCambiarLista() {
         mostrarErrores([`Se quitaron ${quitados} renglón(es) porque ese artículo no existe en la lista elegida.`]);
     }
 }
+/** ¿La condición IVA elegida en el <select> es Consumidor Final? (se compara por código ARCA, no por texto) */
+function esConsumidorFinal() {
+    const opcion = selectCondicionIva.selectedOptions.item(0); // HTMLOptionElement | null
+    return opcion?.dataset.codigoAfip === String(CODIGO_AFIP_CONSUMIDOR_FINAL);
+}
+/** El asterisco y el placeholder del campo Cliente reflejan si es obligatorio o no. */
+function actualizarTextosCliente() {
+    const opcional = esConsumidorFinal();
+    etiquetaCliente.textContent = opcional ? "Cliente (opcional)" : "Cliente *";
+    inputCliente.placeholder = opcional
+        ? "Consumidor Final (clic para elegir un cliente)"
+        : "Clic para buscar un cliente";
+}
 // -------- Validación y envío
 function validar() {
     const errores = [];
@@ -229,8 +246,9 @@ function validar() {
             errores.push("Seleccioná la condición IVA.");
         if (leerTexto(datos, "listaPrecioId") === "")
             errores.push("Seleccioná una lista de precios.");
-        if (leerTexto(datos, "clienteId") === "")
-            errores.push("Seleccioná un cliente.");
+        if (leerTexto(datos, "clienteId") === "" && !esConsumidorFinal()) {
+            errores.push("Seleccioná un cliente (solo es opcional si la condición IVA es Consumidor Final).");
+        }
     }
     if (items.length === 0)
         errores.push("Agregá al menos un producto.");
@@ -333,7 +351,7 @@ async function abrirSelectorCliente() {
         return;
     inputCliente.value = cliente.denominacion;
     inputClienteId.value = String(cliente.id);
-    //botonQuitarCliente.hidden = false;
+    botonQuitarCliente.hidden = false;
 }
 inputCliente.addEventListener("click", () => void abrirSelectorCliente());
 inputCliente.addEventListener("keydown", (event) => {
@@ -349,6 +367,7 @@ botonQuitarCliente.addEventListener("click", () => {
 });
 // ------ Eventos generales
 selectListaPrecio.addEventListener("change", () => void alCambiarLista());
+selectCondicionIva.addEventListener("change", actualizarTextosCliente);
 botonAgregar.addEventListener("click", () => {
     if (selectListaPrecio.value === "")
         return; // sin lista no hay artículos para elegir
@@ -445,6 +464,7 @@ async function iniciar() {
         mostrarErrores([mensajeDeError(error)]);
     }
     botonAgregar.disabled = selectListaPrecio.value === "";
+    actualizarTextosCliente();
     renderizarTabla();
 }
 void iniciar();

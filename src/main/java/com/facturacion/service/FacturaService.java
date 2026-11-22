@@ -20,6 +20,7 @@ import java.util.Map;
 public class FacturaService {
 
     private static final double ALICUOTA_IVA = 0.21;
+    private static final int CODIGO_AFIP_CONSUMIDOR_FINAL = 5;
 
     @Autowired
     private AfipFacturacionService afip;
@@ -36,14 +37,16 @@ public class FacturaService {
             throw new IllegalArgumentException("La factura debe tener al menos un artículo.");
         }
 
-        if (dto.clienteId() == null) {
-            throw new IllegalArgumentException("Seleccioná un cliente para la factura.");
-        }
-        Cliente cliente = buscarObligatorio(Cliente.class, dto.clienteId(), "Cliente");
         CondicionIva condicionIva = buscarObligatorio(CondicionIva.class, dto.condicionIvaId(), "Condición IVA");
+
+        // El cliente es opcional SOLO si la condición es Consumidor Final.
+        Cliente cliente = (dto.clienteId() != null)
+                ? buscarObligatorio(Cliente.class, dto.clienteId(), "Cliente")
+                : null;
+        validarClienteSegunCondicion(cliente, condicionIva);
+
         PuntoVenta puntoVenta = buscarObligatorio(PuntoVenta.class, dto.puntoVentaId(), "Punto de venta");
         TipoMoneda tipoMoneda = buscarObligatorio(TipoMoneda.class, dto.tipoMonedaId(), "Tipo de moneda");
-        // NUEVO: la lista es obligatoria al crear. NO se guarda en la factura: solo sirve para validar los renglones.
         ListaPrecio listaPrecio = buscarObligatorio(ListaPrecio.class, dto.listaPrecioId(), "Lista de precios");
 
         FacturaVenta factura = new FacturaVenta();
@@ -81,7 +84,7 @@ public class FacturaService {
     public FacturaReporteDTO actualizar(Long id, FacturaRequestDTO dto) {
         FacturaVenta factura = buscarObligatorio(FacturaVenta.class, id, "Factura");
 
-        // REGLA: solo las PENDIENTES se pueden modificar (esto incluye anularlas).
+        // solo las PENDIENTES se pueden modificar (esto incluye anularlas).
         exigirPendiente(factura, "modificar");
 
         // Por acá el estado solo puede pasar a ANULADA. EMITIDA se alcanza únicamente informando a ARCA;
@@ -103,6 +106,12 @@ public class FacturaService {
         }
         if (dto.clienteId() != null) {
             factura.setCliente(buscarObligatorio(Cliente.class, dto.clienteId(), "Cliente"));
+        }
+
+        // Si el PUT toca el cliente o la condición, la combinación resultante tiene que ser válida.
+        // (Solo en ese caso: así no se bloquean facturas viejas que se editan solo en sus renglones.)
+        if (dto.clienteId() != null || dto.condicionIvaId() != null) {
+            validarClienteSegunCondicion(factura.getCliente(), factura.getCondicionIva());
         }
 
         // Solo tocamos lo que viene en el DTO (así el front puede mandar un PUT parcial)
@@ -284,7 +293,7 @@ public class FacturaService {
     @Transactional(readOnly = true)
     public List<CondicionIvaDTO> listarCondicionesIva() {
         return em.createQuery(
-                "SELECT new com.facturacion.DTO.CondicionIvaDTO(ci.id, ci.denominacion) " +
+                "SELECT new com.facturacion.DTO.CondicionIvaDTO(ci.id, ci.denominacion, ci.codigoAfip) " +
                         "FROM CondicionIva ci " +
                         "WHERE ci.fechaBaja IS NULL " +
                         "ORDER BY ci.denominacion",
@@ -388,6 +397,15 @@ public class FacturaService {
                 : "está en estado " + factura.getEstado();
         throw new IllegalArgumentException("No se puede " + accion + " la factura: " + motivo
                 + ". Solo se pueden " + accion + " facturas PENDIENTES.");
+    }
+
+    /** El cliente solo puede faltar si la condición IVA es Consumidor Final (venta anónima). */
+    private void validarClienteSegunCondicion(Cliente cliente, CondicionIva condicionIva) {
+        boolean esConsumidorFinal = condicionIva.getCodigoAfip() == CODIGO_AFIP_CONSUMIDOR_FINAL;
+        if (cliente == null && !esConsumidorFinal) {
+            throw new IllegalArgumentException(
+                    "Seleccioná un cliente. Solo se puede omitir cuando la condición IVA es Consumidor Final.");
+        }
     }
 
 }

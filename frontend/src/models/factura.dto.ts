@@ -138,4 +138,5 @@ export interface PuntoVentaDTO {
 export interface CondicionIvaDTO {
     id: number;
     denominacion: string;
+    codigoAfip: number;
 }
