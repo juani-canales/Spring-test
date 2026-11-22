@@ -111,8 +111,6 @@ function crearBotonAccion(texto, clase, alHacerClic) {
 function crearCeldaAcciones(factura) {
     const celda = document.createElement("td");
     celda.className = "acciones-fila";
-    // Solo una factura PENDIENTE (nunca informada a ARCA) admite acciones.
-    // Una EMITIDA tiene CAE: no se edita, no se anula y no se borra (se corrige con nota de crédito).
     if (factura.estado === "PENDIENTE") {
         celda.appendChild(crearBotonAccion("Editar", "btn-editor", () => {
             window.location.href = `nueva-factura.html?id=${factura.id}`;
@@ -120,10 +118,40 @@ function crearCeldaAcciones(factura) {
         celda.appendChild(crearBotonAccion("Anular", "btn-anulado", () => void anular(factura)));
         celda.appendChild(crearBotonAccion("Eliminar", "btn-peligro", () => void eliminar(factura)));
     }
+    else if (factura.estado === "EMITIDA") {
+        // Una EMITIDA tiene CAE: no se edita, no se anula y no se borra, pero sí se puede descargar su comprobante.
+        const botonPdf = crearBotonAccion("PDF", "btn-secundario btn-pdf", () => void descargarPdf(factura, botonPdf));
+        celda.appendChild(botonPdf);
+    }
     else {
         celda.textContent = "—";
     }
     return celda;
+}
+async function descargarPdf(factura, boton) {
+    const textoOriginal = boton.textContent ?? "PDF";
+    boton.disabled = true; // estado "loading": evita clics repetidos
+    boton.textContent = "Generando...";
+    try {
+        const pdf = await servicio.descargarPdf(factura.id);
+        // Un Blob vive en memoria. Le creamos una URL temporal y la "clickeamos" con un <a download>
+        // invisible: el navegador lo trata como una descarga normal.
+        const url = URL.createObjectURL(pdf);
+        const enlace = document.createElement("a");
+        enlace.href = url;
+        enlace.download = `factura-${factura.numeroFactura ?? factura.id}.pdf`;
+        document.body.appendChild(enlace);
+        enlace.click();
+        enlace.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000); // liberamos la memoria
+    }
+    catch (error) {
+        mostrarMensaje(mensajeDeError(error), "error");
+    }
+    finally {
+        boton.disabled = false; // pase lo que pase, se reactiva
+        boton.textContent = textoOriginal;
+    }
 }
 // ------------------ 5. Anular / Eliminar
 async function anular(factura) {

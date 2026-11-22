@@ -198,3 +198,6 @@ tbody tr:hover { background: #f8fbff; }
 .estado-pendiente { color: #755a00; font-weight: 700; }
 .estado-emitida   { color: var(--exito); font-weight: 700; }
 .estado-anulada   { color: #b42335; font-weight: 700; }
+
+.btn-pdf { color: #1d4ed8; background: #eff6ff; border-color: #93c5fd; }
+.btn-pdf:hover { background: #dbeafe; border-color: #60a5fa; }

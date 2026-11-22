@@ -143,4 +143,11 @@ export class FacturaService {
         const datos: ArticuloPrecioDTO[] = await respuesta.json();
         return datos;
     }
+    // GET /api/facturas/{id}/pdf  ->  el archivo PDF. NO se llama a .json(): un PDF no es JSON, es un Blob.
+    async descargarPdf(id: number): Promise<Blob> {
+        const respuesta = await fetch(`${API}/${id}/pdf`);
+        await verificarRespuesta(respuesta);
+
+        return await respuesta.blob();
+    }
 }

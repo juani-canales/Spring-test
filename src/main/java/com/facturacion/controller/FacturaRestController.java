@@ -8,6 +8,10 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.facturacion.service.FacturaPdfService;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 import java.util.Date;
 import java.util.List;
@@ -20,6 +24,7 @@ import java.util.Map;
 public class FacturaRestController {
 
     private final FacturaService service;
+    private final FacturaPdfService pdfService;
 
     @GetMapping
     public PaginaDTO<FacturaReporteDTO> listar (@RequestParam(required = false) Long numero,
@@ -63,6 +68,16 @@ public class FacturaRestController {
     @GetMapping("/{id}")
     public FacturaEdicionDTO obtener(@PathVariable Long id) {
         return service.obtenerParaEdicion(id);
+    }
+
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<byte[]> pdf(@PathVariable Long id) {
+        FacturaPdfService.ComprobantePdf pdf = pdfService.generar(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.inline().filename(pdf.nombreArchivo()).build().toString())
+                .body(pdf.contenido());
     }
 
     @PostMapping
